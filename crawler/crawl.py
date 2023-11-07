@@ -6,6 +6,7 @@ from tqdm import tqdm
 import json
 import os
 import time
+import fitz
 from utils import makedir
 
 class PaperCrawler:
@@ -35,12 +36,27 @@ class PaperCrawler:
         
         self.save_json(links, os.path.join(self.save_path, "pdflinks.json"), "pdflinks.json")
     
-    def parse(self):
-        pass
+    def parse(self, filename):
+        '''Parse pdf to raw text data'''
+        pdf_path = os.path.join(self.save_path,"pdf", filename)
+        try:
+            pdf = fitz.open(pdf_path)
+        except:
+            print("Broken file")
+            os.remove(pdf_path)
+            return
+        text = ""
+        for i in range(pdf.page_count):
+            text += pdf[i].get_text()
+        text = text.replace("\n"," ")
+        savepath = makedir(os.path.join(self.save_path,"raw"))
+        with open(os.path.join(savepath, os.path.splitext(filename)[0]+".txt"), "w",encoding="utf-8") as f:
+            f.write(text)
+        print(f"Parse {filename}")
 
     def download(self, pdflinks, headers=None):
+        '''Download pdf from the given list of links'''
         dir_path = makedir(os.path.join(self.save_path, "pdf"))
-        suc = []
         count = 0
         for link in pdflinks:
             pdf_id = link.split("/")[-1]
@@ -51,11 +67,9 @@ class PaperCrawler:
                     f.write(res.content)
                 count+=1
                 print(f"【{count}/{len(pdflinks)}】Successfully write {pdf_id}.pdf")
-                suc.append(pdf_id+".pdf")
                 time.sleep(2)
             except:
                 print(f"Fail to download {pdf_id}.pdf")
-        self.save_json(suc, os.path.join(self.save_path,"downloads.json"),"downloads.json")
 
     def save_json(self, obj, path, name=None):
         print(f"Saving {name} to {path}")
