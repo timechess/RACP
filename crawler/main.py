@@ -26,6 +26,7 @@ def parser():
 arg = parser()
 makedir(arg.save_path, logger)
 makedir(os.path.join(arg.save_path, "pdf"), logger)
+makedir(os.path.join(arg.save_path,"abs"), logger)
 
 def download_worker(split, id):
     crawl.download(split[id],arg.save_path,logger)
@@ -33,9 +34,20 @@ def download_worker(split, id):
 def monitor_and_parse():
     folder_path = os.path.join(arg.save_path, "pdf")
     parsed_file = set()
-    while True:
+    flag1 = True
+    flag2 = True
+    while (flag1 | flag2):
         files = os.listdir(folder_path)
-        files = list(filter(lambda path: os.path.splitext(path)[-1] == ".pdf", files))
+        if len(files) == 0:
+            time.sleep(10)
+            flag = len(os.listdir(folder_path)) == 0
+            if (flag1 & flag):
+                flag1 = False
+                logger.debug("No new pdf for 10s")
+            elif (flag2 & flag):
+                flag2 = False
+                logger.debug("No new pdf for 10s, stop parsing")
+            continue
         for file in files:
             if file not in parsed_file:
                 file_path = os.path.join(folder_path, file)
@@ -46,8 +58,8 @@ def monitor_and_parse():
                     try:
                         crawl.parse_pdf(file, arg.save_path, logger)
                         parsed_file.add(file)
+                        os.remove(file_path)
                     except:
-                        time.sleep(2)
                         continue
         time.sleep(2)
 

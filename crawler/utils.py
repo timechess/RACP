@@ -1,5 +1,6 @@
 import os
 import json
+import threading
 from nltk.corpus import wordnet
 from nltk import word_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
@@ -14,7 +15,7 @@ def makedir(path, logger):
     return path
 
 def save_json(obj, path, logger, name=None):
-    logger.debug(f"Saving {name} to {path}")
+    logger.debug(f"Thread {threading.current_thread().ident} : Saving {name} to {path}")
     with open(path, "w", encoding= "utf-8") as f:
         json.dump(obj, f, indent=4)
 

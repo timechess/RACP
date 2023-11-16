@@ -3,7 +3,7 @@
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
-import json
+import threading
 import os
 import time
 import fitz
@@ -37,7 +37,7 @@ def parse_pdf(filename, save_path, logger):
     try:
         pdf = fitz.open(file_path)
     except:
-        logger.error(f"Broken file {filename}")
+        logger.error(f"Thread {threading.current_thread().ident} : Broken file {filename}")
         os.remove(file_path)
         return
     text = ""
@@ -66,20 +66,20 @@ def download(pdflinks, save_path, logger, headers=None):
             with open(os.path.join(dir_path, pdf_id+".pdf"), "wb") as f:
                 f.write(res.content)
             count+=1
-            logger.debug(f"【{count}/{len(pdflinks)}】Successfully write {pdf_id}.pdf")
+            logger.debug(f"Thread {threading.current_thread().ident} : 【{count}/{len(pdflinks)}】Successfully write {pdf_id}.pdf")
             
         except:
-            logger.error(f"Fail to download {pdf_id}.pdf")
+            logger.error(f"Thread {threading.current_thread().ident} : Fail to download {pdf_id}.pdf")
         abs_url = f"https://arxiv.org/abs/{pdf_id}"
         try:
             res = requests.get(abs_url, headers=headers)
             res.raise_for_status()
             abs_bs = BeautifulSoup(res.text, "xml")
             abstract = abs_bs.find_all("blockquote")[0].text
-            with open(os.path.join(dir_path, pdf_id+".txt"), "w", encoding="utf-8") as f:
+            with open(os.path.join(save_path, "abs", pdf_id+".txt"), "w", encoding="utf-8") as f:
                 f.write(abstract)
         except:
-            logger.error(f"Fail to get {pdf_id}'s abstract")
+            logger.error(f"Thread {threading.current_thread().ident} : Fail to get {pdf_id}'s abstract")
         time.sleep(2)
 
 
