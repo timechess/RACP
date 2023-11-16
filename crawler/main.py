@@ -1,10 +1,17 @@
-from crawl import PaperCrawler
+import crawl
 from utils import makedir
 import argparse
 import json
 import threading
 import os
 import time
+from loguru import logger
+
+logger.add(
+    "log.log",
+    enqueue=True,
+    level="ERROR"
+)
 
 def parser():
     parser = argparse.ArgumentParser("Script for crawling from arxiv")
@@ -17,17 +24,18 @@ def parser():
     return parser.parse_args()
 
 arg = parser()
-makedir(arg.save_path)
-crawler = PaperCrawler(arg.field, 3, arg.save_path)
+makedir(arg.save_path, logger)
+makedir(os.path.join(arg.save_path, "pdf"), logger)
 
 def download_worker(split, id):
-    crawler.download(split[id])
+    crawl.download(split[id],arg.save_path,logger)
 
 def monitor_and_parse():
     folder_path = os.path.join(arg.save_path, "pdf")
     parsed_file = set()
     while True:
         files = os.listdir(folder_path)
+        files = list(filter(lambda path: os.path.splitext(path)[-1] == ".pdf", files))
         for file in files:
             if file not in parsed_file:
                 file_path = os.path.join(folder_path, file)
@@ -36,7 +44,7 @@ def monitor_and_parse():
                 final_size = os.path.getsize(file_path)
                 if initial_size == final_size:
                     try:
-                        crawler.parse(file)
+                        crawl.parse_pdf(file, arg.save_path, logger)
                         parsed_file.add(file)
                     except:
                         time.sleep(2)
@@ -45,9 +53,10 @@ def monitor_and_parse():
 
 if __name__ == "__main__":
     if arg.only_links:
-        links = crawler.get_links()
-        crawler.save_json(links, os.path.join(crawler.save_path, "pdflinks.json"), "pdflinks.json")
-    
+        links = crawl.get_links(3, arg.field, arg.save_path, logger)
+        crawl.save_json(links, os.path.join(arg.save_path, "pdflinks.json"), logger, "pdflinks.json")
+        exit()
+
     if arg.use_cache_links:
         try:
             with open(os.path.join(arg.save_path, "pdflinks.json"),"r") as f:
@@ -55,7 +64,7 @@ if __name__ == "__main__":
         except:
             raise ValueError(f"pdflinks.json not exists in {arg.save_path}")
     else:
-        pdflinks = crawler.get_links()
+        pdflinks = crawl.get_links(3, arg.field, arg.save_path, logger)
 
     num = len(pdflinks)//arg.threads
     pdflink_split = [pdflinks[num*i:num*(i+1)] for i in range(arg.threads)]
