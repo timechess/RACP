@@ -2,9 +2,8 @@ import crawl
 from utils import makedir
 import argparse
 import json
-import threading
+from multiprocessing import Process
 import os
-import time
 from loguru import logger
 
 logger.add(
@@ -28,42 +27,12 @@ makedir(arg.save_path, logger)
 makedir(os.path.join(arg.save_path, "pdf"), logger)
 makedir(os.path.join(arg.save_path,"abs"), logger)
 
+
 def download_worker(split, id):
     crawl.download(split[id],arg.save_path,logger)
 
-def monitor_and_parse():
-    folder_path = os.path.join(arg.save_path, "pdf")
-    parsed_file = set()
-    flag1 = True
-    flag2 = True
-    while (flag1 | flag2):
-        files = os.listdir(folder_path)
-        if len(files) == 0:
-            time.sleep(10)
-            flag = len(os.listdir(folder_path)) == 0
-            if (flag1 & flag):
-                flag1 = False
-                logger.debug("No new pdf for 10s")
-            elif (flag2 & flag):
-                flag2 = False
-                logger.debug("No new pdf for 10s, stop parsing")
-            continue
-        for file in files:
-            if file not in parsed_file:
-                file_path = os.path.join(folder_path, file)
-                initial_size = os.path.getsize(file_path)
-                time.sleep(2)  
-                final_size = os.path.getsize(file_path)
-                if initial_size == final_size:
-                    try:
-                        crawl.parse_pdf(file, arg.save_path, logger)
-                        parsed_file.add(file)
-                        os.remove(file_path)
-                    except:
-                        continue
-        time.sleep(2)
-
 if __name__ == "__main__":
+
     if arg.only_links:
         links = crawl.get_links(3, arg.field, arg.save_path, logger)
         crawl.save_json(links, os.path.join(arg.save_path, "pdflinks.json"), logger, "pdflinks.json")
@@ -84,15 +53,9 @@ if __name__ == "__main__":
         pdflink_split[-1] += pdflinks[-(len(pdflinks)-num*arg.threads):]
     threads = []
     for i in range(arg.threads):
-        t = threading.Thread(target=download_worker,args=(pdflink_split, i))
+        t = Process(target=download_worker,args=(pdflink_split, i))
         t.start()
         threads.append(t)
 
-    pdf_path = os.path.join(arg.save_path,"pdf")
-    monitor_thread = threading.Thread(target=monitor_and_parse)
-    monitor_thread.start()
-
     for t in threads:
         t.join()
-
-    monitor_thread.join()
