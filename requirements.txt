@@ -2,3 +2,5 @@ requests
 PyMuPDF
 beautifulsoup4
 tqdm
+loguru
+nltk

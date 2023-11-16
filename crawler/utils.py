@@ -1,6 +1,5 @@
 import os
 import json
-import threading
 from nltk.corpus import wordnet
 from nltk import word_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
