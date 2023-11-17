@@ -1,0 +1,18 @@
+site_name: RACP
+
+nav: 
+  - Home: index.md
+  - Reference: 
+    - Reference/crawl.md
+    - Reference/utils.md
+
+theme: readthedocs
+
+plugins:
+  - search
+  - include-markdown
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src/racp]

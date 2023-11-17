@@ -1,34 +1,38 @@
-import crawl
-from utils import makedir
+import racp.crawl as crawl
+from racp.utils import makedir
 import argparse
 import json
 from multiprocessing import Process
 import os
 from loguru import logger
 
-logger.add(
-    "log.log",
-    enqueue=True,
-    level="ERROR"
-)
+with open("resources\stop_words.txt", "r", encoding="utf-8") as f:
+    stopwords = list(map(lambda word: word.strip(), f.readlines()))
 
 def parser():
-    parser = argparse.ArgumentParser("Script for crawling from arxiv")
+    parser = argparse.ArgumentParser("Script for crawling from arXiV")
     parser.add_argument("--field", type=str, default="cs.IR", help="Field to crawl")
     parser.add_argument("--get-link", default=False, action="store_true", help="Get pdf links and save")
     parser.add_argument("--threads", type=int, default=4, help="Threads used to download pdfs")
-    parser.add_argument("--save-path", required=True, help="Directory to store data")
+    parser.add_argument("--save-path", default="./data", help="Directory to store data")
 
     return parser.parse_args()
 
 arg = parser()
+
+logger.add(
+    os.path.join(arg.save_path,"log.log"),
+    enqueue=True,
+    level="ERROR"
+)
+
 makedir(arg.save_path, logger)
 makedir(os.path.join(arg.save_path, "pdf"), logger)
 makedir(os.path.join(arg.save_path,"abs"), logger)
 
 
 def download_worker(split, id):
-    crawl.download(split[id],arg.save_path,logger)
+    crawl.download(split[id],arg.save_path,logger,True, stopwords)
 
 if __name__ == "__main__":
     if arg.get_link:   
