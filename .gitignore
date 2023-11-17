@@ -3,3 +3,5 @@
 *.ipynb
 *.log
 site
+src/racp.egg-info
+data
