@@ -1,12 +1,10 @@
-# This file implements PaperCrawler, which crawl pdfs from the Internet, parse them and save data
-# into specified directory. 
 import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 import os
 import time
 import fitz
-from utils import makedir, tokenize, save_json
+from racp.utils import makedir, tokenize, save_json
 
 def get_links(
         years : int, 
@@ -57,6 +55,7 @@ def get_links(
 def parse_pdf(
         filepath : str, 
         save_path : str, 
+        stopwords : list,
         logger
     ):
     '''Parse pdf to and save data
@@ -67,6 +66,7 @@ def parse_pdf(
     Args:
         filename: The path of pdf file you want to parse.
         save_path: The path to save parsed data.
+        stopwords: List of stopwords used by tokenizaiton.
         logger: loguru logger
 
     Returns:
@@ -88,7 +88,7 @@ def parse_pdf(
     for i in range(pdf.page_count):
         text += pdf[i].get_text()
     text = text.replace("\n"," ")
-    tokens = tokenize(text)
+    tokens = tokenize(text, stopwords)
     data = {
         "file" : filepath,
         "raw" : text,
@@ -102,6 +102,9 @@ def download(
         pdflinks : list, 
         save_path : str, 
         logger, 
+        parse=False,
+        stopwords=None,
+        sleep=1,
         headers=None
     ):
     '''Download pdf and abstract from the given list of links
@@ -109,11 +112,15 @@ def download(
     Given the pdf links to crawl, it download pdfs from the Internet and save them to given path.
     Additionally, it gets the paper's abstract from another page and saves them seperately.
     For example, the pdf will be saved as pdf/{id}.pdf, and its abstract will be saved as abs/{id}.txt.
+    You can choose to parse the pdf while downloading by pass parse=True.
 
     Args:
         pdflinks: A List of links to download.
         save_path: The path to save data.
         logger: loguru logger.
+        parse: Whether parse the pdf upon finishing download, default to False.
+        stopwords: List of stopwords used by tokenization, default to None.
+        sleep: Sleep time after finishing downloading one pdf, default to 1.
         headers: Default to None.
     
     Returns:
@@ -145,8 +152,11 @@ def download(
                 f.write(abstract)
         except:
             logger.error(f"Process {os.getpid()} : Fail to get {pdf_id}'s abstract")
-        parse_pdf(pdf_id+".pdf", save_path, logger)
-        time.sleep(1)
+        if parse:
+            if stopwords == None:
+                raise ValueError("You need to pass in valid stopwords to parse pdf")
+            parse_pdf(os.path.join(dir_path,pdf_id+".pdf"), save_path, stopwords, logger)
+        time.sleep(sleep)
 
         
     
