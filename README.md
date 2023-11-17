@@ -17,10 +17,7 @@ at the project root directory. This allows you to import `racp` in python code.
 
 If you want to read the docs, for now you need to install `mkdocs` yourself since we haven't deploy our docs. So you need to run these commands:
 ```shell
-pip install mkdocs
-pip install mkdocs-include-markdown-plugin
-pip install mkdocstrings
-pip install mkdocstrings-python
+pip install mkdocs mkdocs-include-markdown-plugin mkdocstrings mkdocstrings-python
 ```
 
 If you want to view the docs, run `mkdocs build` at the project root directory. It will create `./site` directory which contains `index.html` file. Open the file with your browser and read the docs.
