@@ -71,11 +71,9 @@ def parse_pdf(
 
     Returns:
         A Dict contains parsed data structured like:
-        {
-            "file" : filepath,
-            "raw" : pdf text,
-            "tokens": tokens from text that have been processed
-        }
+        "file" : filepath,
+        "raw" : pdf text,
+        "tokens": tokens from text that have been processed
         And it will be saved to given path.
     '''
     
