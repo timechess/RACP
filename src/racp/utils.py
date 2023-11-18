@@ -1,5 +1,7 @@
 import os
 import json
+import fitz
+import re
 from nltk.corpus import wordnet
 from nltk import word_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
@@ -85,3 +87,101 @@ def tokenize(
         if lemma not in stopwords:
             result.append(lemma)
     return result
+
+
+def pdf2text(
+        pdfpath : str,
+        logger,
+        tolower : bool = True
+):
+    '''Get raw text from pdf.
+    
+    Args:
+        pdfpath: The path of the pdf file.
+        logger: loguru logger.
+        tolower: Whether make all the character to lower case. Default to True.
+
+    Returns:
+        Raw text string.
+    '''
+
+    try:
+        pdf = fitz.open(pdfpath)
+    except:
+        logger.error(f"Process {os.getpid()} : Unable to open {pdfpath}")
+        return
+    text = ""
+    for i in range(pdf.page_count):
+        text += pdf[i].get_text()
+    
+    if tolower:
+        text = text.lower()
+    return text
+
+
+def find_ref_index(
+        text : str
+):
+    """Find the index of the last references/reference/bibliography in the given text.
+
+    To remove references in the raw text, this is a method to find the last title word's index.
+    We will remove the content after this index in the next processing step.
+
+    Args:
+        text: The raw text string.
+
+    Returns:
+        The last references/reference/bibliography in the string. If there isn't any, return -1.
+    """
+    if "references" in text:
+        indexs = [substr.start() for substr in re.finditer("references", text)]
+    elif "reference" in text:
+        indexs = [substr.start() for substr in re.finditer("reference", text)]
+    elif "bibliography" in text:
+        indexs = [substr.start() for substr in re.finditer("bibliography", text)]
+    else:
+        return -1
+    return indexs[-1]
+
+def parse_pdf(
+        filepath : str, 
+        save_path : str, 
+        stopwords : list,
+        logger
+    ):
+    '''Parse pdf to and save data
+    
+    Given the path of the pdf you want to parse, it saves parsed data to given path
+    and name it {pdf_id}.json. If the file is broken, the error will be logged. This
+    function removes references in pdf. If no references found, the file would be ignored.
+
+    Args:
+        filename: The path of pdf file you want to parse.
+        save_path: The path to save parsed data.
+        stopwords: List of stopwords used by tokenizaiton.
+        logger: loguru logger
+
+    Returns:
+        A Dict contains parsed data structured like:
+        "file" : filepath,
+        "raw" : pdf text,
+        "tokens": tokens from text that have been processed
+        And it will be saved to given path.
+    '''
+    
+    text = pdf2text(filepath)
+    text = text.replace("\n"," ")
+    ref_index = find_ref_index(text)
+    if ref_index == -1:
+        logger.debug(f"No reference found in {filepath}, treat it as trash")
+        return None
+    text = text[:ref_index]
+    tokens = tokenize(text, stopwords)
+    data = {
+        "file" : filepath,
+        "raw" : text,
+        "tokens" : tokens,
+    }
+    savepath = makedir(os.path.join(save_path,"parsed_data"),logger)
+    save_json(data, os.path.join(savepath, os.path.splitext(os.path.split(filepath)[-1])[0]+".json"),logger, f"{filepath} parsed data")
+    return data

@@ -3,8 +3,7 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 import os
 import time
-import fitz
-from racp.utils import makedir, tokenize, save_json
+from racp.utils import makedir, save_json, parse_pdf
 
 def get_links(
         years : int, 
@@ -50,51 +49,9 @@ def get_links(
             pass
     
     save_json(links, os.path.join(save_path, "pdflinks.json"), logger, "pdflinks.json")
+    logger.info(f"Get {len(links)} pdf to crawl")
     return links
-    
-def parse_pdf(
-        filepath : str, 
-        save_path : str, 
-        stopwords : list,
-        logger
-    ):
-    '''Parse pdf to and save data
-    
-    Given the path of the pdf you want to parse, it saves parsed data to given path
-    and name it {pdf_id}.json. If the file is broken, the error will be logged.
 
-    Args:
-        filename: The path of pdf file you want to parse.
-        save_path: The path to save parsed data.
-        stopwords: List of stopwords used by tokenizaiton.
-        logger: loguru logger
-
-    Returns:
-        A Dict contains parsed data structured like:
-        "file" : filepath,
-        "raw" : pdf text,
-        "tokens": tokens from text that have been processed
-        And it will be saved to given path.
-    '''
-    
-    try:
-        pdf = fitz.open(filepath)
-    except:
-        logger.error(f"Process {os.getpid()} : Broken file {filepath}")
-        return
-    text = ""
-    for i in range(pdf.page_count):
-        text += pdf[i].get_text()
-    text = text.replace("\n"," ")
-    tokens = tokenize(text, stopwords)
-    data = {
-        "file" : filepath,
-        "raw" : text,
-        "tokens" : tokens,
-    }
-    savepath = makedir(os.path.join(save_path,"parsed_data"),logger)
-    save_json(data, os.path.join(savepath, os.path.splitext(os.path.split(filepath)[-1])[0]+".json"),logger, f"{filepath} parsed data")
-    return data
 
 def download(
         pdflinks : list, 
@@ -157,4 +114,36 @@ def download(
         time.sleep(sleep)
 
         
+def check_download(
+        pdflinks : list,
+        save_path : str,
+        logger
+):
+    '''Check whether all pdf have been downloaded and download fail cases.
     
+    Given a List of pdf links, it will check the `pdf` directory under `save_path`. It returns the
+    pdf links failed to download.
+
+    Args:
+        pdflinks: List of pdf links.
+        save_path: The path to save data, which should contain a pdf directory.
+        logger: loguru logger.
+
+    Returns:
+        None. 
+    '''
+    existing_abs = os.listdir(os.path.join(save_path, "abs"))
+    existing_pdfs = os.listdir(os.path.join(save_path, "pdf"))
+    fail_cases = []
+    for link in pdflinks:
+        pdfid = os.path.split(link)[-1]
+        if pdfid + ".pdf" not in existing_pdfs:
+            fail_cases.append(pdfid)
+            continue
+        if pdfid + ".txt" not in existing_abs:
+            fail_cases.append(pdfid)
+            continue
+    fail_links = list(map(lambda id: "https://arxiv.org/pdf/"+id, fail_cases))
+    logger.info(f"{len(fail_links)} pdfs are failed")
+    return fail_links
+
