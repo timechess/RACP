@@ -14,6 +14,7 @@ def parser():
     parser.add_argument("--field", type=str, default="cs.IR", help="Field to crawl")
     parser.add_argument("--get-link", default=False, action="store_true", help="Get pdf links and save")
     parser.add_argument("--threads", type=int, default=4, help="Threads used to download pdfs")
+    parser.add_argument("--check-download", default=False, action="store_true", help="Whether only check download")
     parser.add_argument("--save-path", default="./data", help="Directory to store data")
 
     return parser.parse_args()
@@ -32,7 +33,7 @@ makedir(os.path.join(arg.save_path,"abs"), logger)
 
 
 def download_worker(split, id):
-    crawl.download(split[id],arg.save_path,logger,True, stopwords)
+    crawl.download(split[id],arg.save_path,logger,False, stopwords)
 
 if __name__ == "__main__":
     if arg.get_link:   
@@ -43,7 +44,8 @@ if __name__ == "__main__":
                 pdflinks = json.load(f)
         except:
             pdflinks = crawl.get_links(3, arg.field, arg.save_path, logger)
-        
+    if arg.check_download:
+        pdflinks = crawl.check_download(pdflinks, arg.save_path, logger)
     num = len(pdflinks)//arg.threads
     pdflink_split = [pdflinks[num*i:num*(i+1)] for i in range(arg.threads)]
     if len(pdflinks)-num*arg.threads != 0:
