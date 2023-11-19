@@ -28,7 +28,7 @@ def get_links(
         timeout: Default to 10.
 
     Returns:
-        A List that contains all the pdf links needed.
+        links: A List that contains all the pdf links needed.
     '''
 
     time = ["{}{:02}".format(23-i,j) for i in range(years) for j in range(1,13)]
@@ -53,7 +53,7 @@ def get_links(
     return links
 
 
-def download(
+def download_pdf(
         pdflinks : list, 
         save_path : str, 
         logger, 
@@ -65,9 +65,9 @@ def download(
     '''Download pdf and abstract from the given list of links
     
     Given the pdf links to crawl, it download pdfs from the Internet and save them to given path.
-    Additionally, it gets the paper's abstract from another page and saves them seperately.
-    For example, the pdf will be saved as pdf/{id}.pdf, and its abstract will be saved as abs/{id}.txt.
-    You can choose to parse the pdf while downloading by pass parse=True.
+    For example, the pdf will be saved as pdf/{id}.pdf.You can choose to parse the pdf while 
+    downloading by pass parse=True. Now abstract won't be downloaded in this function. Check
+    `download_abs`.
 
     Args:
         pdflinks: A List of links to download.
@@ -77,9 +77,6 @@ def download(
         stopwords: List of stopwords used by tokenization, default to None.
         sleep: Sleep time after finishing downloading one pdf, default to 1.
         headers: Default to None.
-    
-    Returns:
-        None.
     '''
 
     dir_path = os.path.join(save_path, "pdf")
@@ -97,23 +94,45 @@ def download(
         except:
             logger.error(f"Process {os.getpid()} : Fail to download {pdf_id}.pdf")
             continue
-        abs_url = f"https://arxiv.org/abs/{pdf_id}"
-        try:
-            res = requests.get(abs_url, headers=headers)
-            res.raise_for_status()
-            abs_bs = BeautifulSoup(res.text, "xml")
-            abstract = abs_bs.find_all("blockquote")[0].text
-            with open(os.path.join(save_path, "abs", pdf_id+".txt"), "w", encoding="utf-8") as f:
-                f.write(abstract)
-        except:
-            logger.error(f"Process {os.getpid()} : Fail to get {pdf_id}'s abstract")
+        #download_abs(pdf_id, save_path, logger)
         if parse:
             if stopwords == None:
                 raise ValueError("You need to pass in valid stopwords to parse pdf")
             parse_pdf(os.path.join(dir_path,pdf_id+".pdf"), save_path, stopwords, logger)
         time.sleep(sleep)
 
-        
+def download_abs(
+        abslinks : list,
+        save_path : str,
+        logger
+):
+    '''Get the abstract of given arXiV paper abstrack links.
+    
+    This function gets abstract of the given papers' links.
+
+    Args:
+        abslinks: A List of links to download.
+        save_path: The path to save directory.
+        logger: loguru logger.
+    '''
+    count = 0
+    for link in abslinks:
+        pdfid = link.split("/")[-1]
+        try:
+            res = requests.get(link)
+            res.raise_for_status()
+            abs_bs = BeautifulSoup(res.text, "xml")
+            abstract = abs_bs.find_all("blockquote")[0].text
+            extra_content_index = abstract.find("\n\n\n")
+            abstract = abstract[:extra_content_index]
+            with open(os.path.join(save_path, "abs", pdfid+".txt"), "w", encoding="utf-8") as f:
+                f.write(abstract)
+            count += 1
+            logger.debug(f"Process {os.getpid()} : 【{count}/{len(abslinks)}】Successfully write {pdfid}.txt")
+        except:
+            logger.error(f"Process {os.getpid()} : Fail to get {pdfid}'s abstract")
+
+
 def check_download(
         pdflinks : list,
         save_path : str,
@@ -130,20 +149,22 @@ def check_download(
         logger: loguru logger.
 
     Returns:
-        None. 
+        pdf_failed_links: The links of failed pdfs.
+        abs_failed_links: The links of failed abstracts.
     '''
     existing_abs = os.listdir(os.path.join(save_path, "abs"))
     existing_pdfs = os.listdir(os.path.join(save_path, "pdf"))
-    fail_cases = []
+    pdf_failed_links = []
+    abs_failed_links = []
     for link in pdflinks:
         pdfid = os.path.split(link)[-1]
         if pdfid + ".pdf" not in existing_pdfs:
-            fail_cases.append(pdfid)
-            continue
+            pdf_failed_links.append(pdfid)
         if pdfid + ".txt" not in existing_abs:
-            fail_cases.append(pdfid)
-            continue
-    fail_links = list(map(lambda id: "https://arxiv.org/pdf/"+id, fail_cases))
-    logger.info(f"{len(fail_links)} pdfs are failed")
-    return fail_links
+            abs_failed_links.append(pdfid)
+    pdf_failed_links = list(map(lambda id: "https://arxiv.org/pdf/"+id, pdf_failed_links))
+    abs_failed_links = list(map(lambda id: "https://arxiv.org/abs/"+id, abs_failed_links))
+    logger.info(f"{len(pdf_failed_links)} pdfs are failed")
+    logger.info(f"{len(abs_failed_links)} abs are failed")
+    return pdf_failed_links, abs_failed_links
 

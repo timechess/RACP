@@ -17,7 +17,7 @@ def makedir(
         logger: loguru logger
     
     Returns:
-        The input path.
+        path: The input path.
     '''
 
     if not os.path.exists(path):
@@ -38,9 +38,6 @@ def save_json(
         path: The file path to save.
         logger: loguru logger.
         name: Default to None. Appear in log.
-    
-    Returns:
-        None.
     '''
 
     logger.debug(f"Process {os.getpid()} : Saving {name} to {path}")
@@ -74,7 +71,7 @@ def tokenize(
         stopwords: The List of stopwords.
     
     Returns:
-        A List of tokens.
+        tokens: A List of tokens.
     '''
     text = text.lower()
     tokens = word_tokenize(text)
@@ -102,7 +99,7 @@ def pdf2text(
         tolower: Whether make all the character to lower case. Default to True.
 
     Returns:
-        Raw text string.
+        text: Raw text string.
     '''
 
     try:
@@ -131,7 +128,7 @@ def find_ref_index(
         text: The raw text string.
 
     Returns:
-        The last references/reference/bibliography in the string. If there isn't any, return -1.
+        index: The last references/reference/bibliography in the string. If there isn't any, return -1.
     """
     if "references" in text:
         indexs = [substr.start() for substr in re.finditer("references", text)]
@@ -162,11 +159,7 @@ def parse_pdf(
         logger: loguru logger
 
     Returns:
-        A Dict contains parsed data structured like:
-        "file" : filepath,
-        "raw" : pdf text,
-        "tokens": tokens from text that have been processed
-        And it will be saved to given path.
+        data: A Dict contains parsed data include "file", "raw", "tokens".
     '''
     
     text = pdf2text(filepath)

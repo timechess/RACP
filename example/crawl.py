@@ -32,8 +32,12 @@ makedir(os.path.join(arg.save_path, "pdf"), logger)
 makedir(os.path.join(arg.save_path,"abs"), logger)
 
 
-def download_worker(split, id):
-    crawl.download(split[id],arg.save_path,logger,False, stopwords)
+def pdf_download_worker(split, id):
+    crawl.download_pdf(split[id],arg.save_path,logger,False, stopwords)
+
+def abs_download_worker(split, id):
+    crawl.download_abs(split[id],arg.save_path,logger)
+
 
 if __name__ == "__main__":
     if arg.get_link:   
@@ -45,16 +49,23 @@ if __name__ == "__main__":
         except:
             pdflinks = crawl.get_links(3, arg.field, arg.save_path, logger)
     if arg.check_download:
-        pdflinks = crawl.check_download(pdflinks, arg.save_path, logger)
-    num = len(pdflinks)//arg.threads
-    pdflink_split = [pdflinks[num*i:num*(i+1)] for i in range(arg.threads)]
-    if len(pdflinks)-num*arg.threads != 0:
-        pdflink_split[-1] += pdflinks[-(len(pdflinks)-num*arg.threads):]
+        pdflinks, abslinks = crawl.check_download(pdflinks, arg.save_path, logger)
+    pdfnum = len(pdflinks)//arg.threads
+    absnum = len(abslinks)//arg.threads
+    pdflink_split = [pdflinks[pdfnum*i:pdfnum*(i+1)] for i in range(arg.threads)]
+    abslink_split = [abslinks[absnum*i:absnum*(i+1)] for i in range(arg.threads)]
+    if len(pdflinks)-pdfnum*arg.threads != 0:
+        pdflink_split[-1] += pdflinks[-(len(pdflinks)-pdfnum*arg.threads):]
+    if len(abslinks)-absnum*arg.threads != 0:
+        abslink_split[-1] += abslinks[-(len(abslinks)-absnum*arg.threads):]
     threads = []
     for i in range(arg.threads):
-        t = Process(target=download_worker,args=(pdflink_split, i))
+        t = Process(target=abs_download_worker,args=(abslink_split, i))
         t.start()
         threads.append(t)
-
+    for i in range(arg.threads):
+        t = Process(target=pdf_download_worker,args=(pdflink_split, i))
+        t.start()
+        threads.append(t)
     for t in threads:
         t.join()
