@@ -183,12 +183,15 @@ def download(
         logger: loguru logger.
     '''
     save_dir = makedir(os.path.join(save_path,"data"),logger)
+    count = 0
     for pdfid in pdfids:
         try:
             document = ArxivLoader(pdfid).load()[0] 
             content = document.page_content
             data = document.metadata
             data["Content"] = content
+            count+=1
+            logger.debug(f"Process {os.getpid()} : 【{count}/{len(pdfids)}】Successfully get {pdfid}")
             save_json(data, os.path.join(save_dir, f"{pdfid}.json"), logger, f"{pdfid}.json")
         except:
             logger.error(f"Fail to download {pdfid}")
