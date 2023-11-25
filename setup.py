@@ -10,7 +10,9 @@ setup(
         "tqdm",
         "loguru",
         "nltk",
-        "lxml"
+        "lxml",
+        "arxiv",
+        "langchain"
     ],
     python_requires = ">=3.8",
     packages = ["racp"],

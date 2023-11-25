@@ -4,8 +4,9 @@ from tqdm import tqdm
 import os
 import json
 import time
-from racp.utils import save_json
+from racp.utils import save_json, makedir
 from loguru import logger
+from langchain.document_loaders import ArxivLoader
 
 logger.add(
     "log.log",
@@ -13,7 +14,7 @@ logger.add(
     level="ERROR"
 )
 
-def get_links(
+def get_ids(
         years : int, 
         fields : list, 
         save_path : str,
@@ -21,12 +22,12 @@ def get_links(
         headers=None, 
         timeout=30
     ):
-    '''Get pdf links from specified field and years
+    '''Get pdf arXiv ids from specified field and years
     
-    Given years and field, it crawls from arXiV and get all pdf links that satisfies requirements.
+    Given years and field, it crawls from arXiV and get all pdf ids that satisfies requirements.
     For example, get_links(3, [cs.IR], ..) returns all cs.IR papers in 2021-2023 and saves data into
-    the given path. The json file is named "pdflinks.json". Internet errors will be logged and pass.
-    Note that we first need to get all urls to crawl since arXiV defaultly set one page contains 25
+    the given path. The json file is named "targets.json". Internet errors will be logged and pass.
+    Note that we first need to get all urls to crawl since arXiv defaultly set one page contains 25
     paper. The cache will be saved as "all_queries.json". If you want to crawl again, please delete
     the cache.
 
@@ -39,7 +40,7 @@ def get_links(
         timeout: Default to 30.
 
     Returns:
-        links: A List that contains all the pdf links needed.
+        ids: A List that contains all the pdf ids needed.
     '''
 
     times = ["{}{:02}".format(23-i,j) for i in range(years) for j in range(1,13)]
@@ -82,7 +83,7 @@ def get_links(
                 logger.error(f"Fail to get {url}")
                 pass
         save_json(all_queries, os.path.join(save_path, "all_queries.json"),logger, "all_queries.json")
-    links = []
+    ids = []
     for url in tqdm(all_queries):
         try:
             res = requests.get(url, headers=headers, timeout=timeout)
@@ -90,14 +91,14 @@ def get_links(
             bs = BeautifulSoup(res.text, features="xml")
             pdf_links = bs.find_all('a', title="Download PDF")
             for link in pdf_links:
-                links.append("https://arxiv.org" + link['href'])
+                ids.append(link['href'].split("/")[-1])
         except:
             logger.error(f"Fail to get {url}")
             pass
-    links = list(set(links))
-    save_json(links, os.path.join(save_path, "pdflinks.json"), logger, "pdflinks.json")
-    logger.info(f"Get {len(links)} pdf to crawl")
-    return links
+    ids = list(set(ids))
+    save_json(ids, os.path.join(save_path, "targets.json"), logger, "targets.json")
+    logger.info(f"Get {len(ids)} pdf to crawl")
+    return ids
 
 
 def download_pdf(
@@ -105,7 +106,7 @@ def download_pdf(
         save_path : str, 
         logger=logger, 
     ):
-    '''Download pdf and abstract from the given list of links
+    '''Aborted, don't use.
     
     Given the pdf links to crawl, it download pdfs from the Internet and save them to given path.
     For example, the pdf will be saved as pdf/{id}.pdf. Now abstract won't be downloaded in this 
@@ -139,7 +140,7 @@ def download_abs(
         save_path : str,
         logger=logger
     ):
-    '''Get the abstract of given arXiV paper abstrack links.
+    '''Aborted, don't use.
     
     This function gets abstract of the given papers' links. It will save to `save_path`/abs/{pdf_id}.txt.
 
@@ -168,32 +169,29 @@ def download_abs(
 
 def download(
         pdfids : list,
-        mode : str,
         save_path : str,
         logger=logger
     ):
-    '''A joint api for pdf and abs
+    '''Use the api from `langchain` to download data given arXiv ids.
     
-    This function uses `download_pdf` and `download_abs`. It only needs papers' arXiV ids. You can 
-    specify which to download by passing the `mode` argument.
+    This function uses `ArxivLoader` from `langchain`. It will save metadata and raw text data into
+    `save_path/data`. The pdfs won't be stored.
 
     Args:
-        pdfid: A List of arXiV ids of the papers you want.
-        mode: "pdf" or "abs" or "all".
+        pdfids: A List of arXiV ids of the papers you want.
         save_path: The path to save data.
         logger: loguru logger.
     '''
-    pdflinks = [f"https://arxiv.org/pdf/{pdfid}" for pdfid in pdfids]
-    abslinks = [f"https://arxiv.org/abs/{pdfid}" for pdfid in pdfids]
-    if mode == "pdf":
-        download_pdf(pdflinks, save_path, logger)
-    elif mode == "abs":
-        download_abs(abslinks, save_path, logger)
-    elif mode == "all":
-        download_pdf(pdflinks, save_path, logger)
-        download_abs(abslinks, save_path, logger)
-    else:
-        raise ValueError("Unknown mode. Please select in ['pdf', 'abs', 'all']")
+    save_dir = makedir(os.path.join(save_path,"data"),logger)
+    for pdfid in pdfids:
+        try:
+            document = ArxivLoader(pdfid).load()[0] 
+            content = document.page_content
+            data = document.metadata
+            data["Content"] = content
+            save_json(data, os.path.join(save_dir, f"{pdfid}.json"), logger, f"{pdfid}.json")
+        except:
+            logger.error(f"Fail to download {pdfid}")
     
 
 def check_download(
@@ -203,28 +201,22 @@ def check_download(
     ):
     '''Check whether all pdf have been downloaded and download fail cases.
     
-    Given a List of pdf ids, it will check the `pdf` directory under `save_path`. It returns the
-    pdf or abstract ids failed to download.
+    Given a List of pdf ids, it will check the `data` directory under `save_path`. It returns the
+    pdf ids failed to download.
 
     Args:
-        pdfids: List of pdf links.
-        save_path: The path to save data, which should contain a pdf directory.
+        pdfids: List of pdf ids.
+        save_path: The path to save data.
         logger: loguru logger.
 
     Returns:
-        pdf_failed_ids: The ids of failed pdfs.
-        abs_failed_ids: The ids of failed abstracts.
+        failed_ids: The ids of failed pdfs.
     '''
-    existing_abs = os.listdir(os.path.join(save_path, "abs"))
-    existing_pdfs = os.listdir(os.path.join(save_path, "pdf"))
-    pdf_failed_ids = []
-    abs_failed_ids = []
+    existing = os.listdir(os.path.join(save_path, "data"))
+    failed_ids = []
     for pdfid in pdfids:
-        if pdfid + ".pdf" not in existing_pdfs:
-            pdf_failed_ids.append(pdfid)
-        if pdfid + ".txt" not in existing_abs:
-            abs_failed_ids.append(pdfid)
-    logger.info(f"{len(pdf_failed_ids)} pdfs are failed")
-    logger.info(f"{len(abs_failed_ids)} abs are failed")
-    return pdf_failed_ids, abs_failed_ids
+        if pdfid + ".json" not in existing:
+            failed_ids.append(pdfid)
+    logger.info(f"{len(failed_ids)} pdfs are failed")
+    return failed_ids
 
