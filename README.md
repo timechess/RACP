@@ -15,7 +15,9 @@ python setup.py install
 
 at the project root directory. This allows you to import `racp` in python code.
 
-If you want to read the docs, for now you need to install `mkdocs` yourself since we haven't deploy our docs. So you need to run these commands:
+Our docs can be viewed on https://racp.readthedocs.io/en/latest/.
+
+If you want to build the docs locally, you need to install `mkdocs`. Run these commands:
 ```shell
 pip install mkdocs mkdocs-include-markdown-plugin mkdocstrings mkdocstrings-python
 ```

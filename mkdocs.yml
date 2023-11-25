@@ -2,6 +2,8 @@ site_name: RACP
 
 nav: 
   - Home: index.md
+  - Example:
+    - Example/crawl.md
   - Reference: 
     - Reference/crawl.md
     - Reference/utils.md

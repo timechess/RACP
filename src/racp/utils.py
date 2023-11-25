@@ -1,9 +1,16 @@
 import os
 import json
+import fitz
+import re
 from nltk.corpus import wordnet
 from nltk import word_tokenize, pos_tag
 from nltk.stem import WordNetLemmatizer
-
+from loguru import logger
+logger.add(
+    "log.log",
+    enqueue=True,
+    level="ERROR"
+)
 def makedir(
     path : int, 
     logger
@@ -15,7 +22,7 @@ def makedir(
         logger: loguru logger
     
     Returns:
-        The input path.
+        path: The input path.
     '''
 
     if not os.path.exists(path):
@@ -36,9 +43,6 @@ def save_json(
         path: The file path to save.
         logger: loguru logger.
         name: Default to None. Appear in log.
-    
-    Returns:
-        None.
     '''
 
     logger.debug(f"Process {os.getpid()} : Saving {name} to {path}")
@@ -72,7 +76,7 @@ def tokenize(
         stopwords: The List of stopwords.
     
     Returns:
-        A List of tokens.
+        tokens: A List of tokens.
     '''
     text = text.lower()
     tokens = word_tokenize(text)
