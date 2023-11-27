@@ -7,9 +7,6 @@ from multiprocessing import Process
 import os
 from loguru import logger
 
-with open("resources\stop_words.txt", "r", encoding="utf-8") as f:
-    stopwords = list(map(lambda word: word.strip(), f.readlines()))
-
 def parser():
     parser = argparse.ArgumentParser("Script for crawling from arXiV")
     parser.add_argument("--year", default=3, type=int, help="Years from 2023")
