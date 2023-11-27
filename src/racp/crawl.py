@@ -21,7 +21,7 @@ def get_ids(
         logger=logger, 
         headers=None, 
         timeout=30
-    ):
+):
     '''Get pdf arXiv ids from specified field and years
     
     Given years and field, it crawls from arXiV and get all pdf ids that satisfies requirements.
@@ -100,102 +100,100 @@ def get_ids(
     logger.info(f"Get {len(ids)} pdf to crawl")
     return ids
 
-
-def download_pdf(
-        pdflinks : list, 
-        save_path : str, 
+def get_ss_data_by_arxiv(
+        arxiv_ids, 
         logger=logger, 
-    ):
-    '''Aborted, don't use.
+        count=0
+):
+    '''Get semantics scholar data given arXiv id'''
+    try:
+        r = requests.post(
+            'https://api.semanticscholar.org/graph/v1/paper/batch',
+            params={'fields': 'externalIds,citations,publicationTypes,authors,references',},
+            json={"ids": [f"ARXIV:{id}" for id in arxiv_ids]}
+        )
+        r.raise_for_status()
+        return r.json()
+    except:
+        if count < 3:
+            logger.warning(f"Fail {count+1} time, try again in 3 secs")
+            time.sleep(3)
+            return get_ss_data_by_arxiv(arxiv_ids, logger, count+1)
+        else:
+            logger.error(f"Failed to get {arxiv_ids} for 3 times. Give up.")
+            return None
     
-    Given the pdf links to crawl, it download pdfs from the Internet and save them to given path.
-    For example, the pdf will be saved as pdf/{id}.pdf. Now abstract won't be downloaded in this 
-    function. Check `download_abs`.
-
-    Args:
-        pdflinks: A List of links to download.
-        save_path: The path to save data.
-        logger: loguru logger.
-    '''
-
-    dir_path = os.path.join(save_path, "pdf")
-    count = 0
-    for link in pdflinks:
-        pdf_id = link.split("/")[-1]
-        try:
-            res = requests.get(link)
-            res.raise_for_status()
-            with open(os.path.join(dir_path, pdf_id+".pdf"), "wb") as f:
-                f.write(res.content)
-            count+=1
-            logger.debug(f"Process {os.getpid()} : 【{count}/{len(pdflinks)}】Successfully write {pdf_id}.pdf")
-            
-        except:
-            logger.error(f"Process {os.getpid()} : Fail to download {pdf_id}.pdf")
-            continue
-        #download_abs(pdf_id, save_path, logger)
-
-def download_abs(
-        abslinks : list,
-        save_path : str,
-        logger=logger
-    ):
-    '''Aborted, don't use.
-    
-    This function gets abstract of the given papers' links. It will save to `save_path`/abs/{pdf_id}.txt.
-
-    Args:
-        abslinks: A List of links to download.
-        save_path: The path to save directory.
-        logger: loguru logger.
-    '''
-    count = 0
-    for link in abslinks:
-        pdfid = link.split("/")[-1]
-        try:
-            res = requests.get(link)
-            res.raise_for_status()
-            abs_bs = BeautifulSoup(res.text, "xml")
-            abstract = abs_bs.find_all("blockquote")[0].text.replace("Abstract:", "")
-            extra_content_index = abstract.find("\n\n\n")
-            abstract = abstract[:extra_content_index]
-           
-            with open(os.path.join(save_path, "abs", pdfid+".txt"), "w", encoding="utf-8") as f:
-                f.write(abstract)
-            count += 1
-            logger.debug(f"Process {os.getpid()} : 【{count}/{len(abslinks)}】Successfully write {pdfid}.txt")
-        except:
-            logger.error(f"Process {os.getpid()} : Fail to get {pdfid}'s abstract")
-
-def download(
-        pdfids : list,
-        save_path : str,
+def get_ss_data_by_ss(
+        ss_ids, 
+        logger=logger, 
+        count = 0
+):
+    '''Get semantics scholar data given ss id'''
+    try:
+        r = requests.post(
+            'https://api.semanticscholar.org/graph/v1/paper/batch',
+            params={'fields': 'externalIds,citations,publicationTypes,authors,references',},
+            json={"ids": ss_ids}
+        )
+        r.raise_for_status()
+        return r.json()
+    except:
+        if count < 3:
+            logger.warning(f"Fail {count+1} time, try again in 3 secs")
+            time.sleep(3)
+            return get_ss_data_by_ss(ss_ids, logger, count+1)
+        else:
+            logger.error(f"Failed to get {ss_ids} for 3 times. Give up.")
+            return None
+        
+def get_arxiv_data(
+        arxiv_id : str,
         logger=logger
     ):
     '''Use the api from `langchain` to download data given arXiv ids.
     
-    This function uses `ArxivLoader` from `langchain`. It will save metadata and raw text data into
-    `save_path/data`. The pdfs won't be stored.
+    This function uses `ArxivLoader` from `langchain`. 
 
     Args:
-        pdfids: A List of arXiV ids of the papers you want.
-        save_path: The path to save data.
+        arxiv_id: The arXiv id of the paper you want.
         logger: loguru logger.
+        
+    Returns:
+        data: A dictionary containing the paper's metedata and content.
     '''
-    save_dir = makedir(os.path.join(save_path,"data"),logger)
-    count = 0
-    for pdfid in pdfids:
-        try:
-            document = ArxivLoader(pdfid).load()[0] 
-            content = document.page_content
-            data = document.metadata
-            data["Content"] = content
-            count+=1
-            logger.debug(f"Process {os.getpid()} : 【{count}/{len(pdfids)}】Successfully get {pdfid}")
-            save_json(data, os.path.join(save_dir, f"{pdfid}.json"), logger, f"{pdfid}.json")
-        except:
-            logger.error(f"Fail to download {pdfid}")
-    
+    try:
+        document = ArxivLoader(arxiv_id).load()[0] 
+        content = document.page_content
+        data = document.metadata
+        data["Content"] = content
+        logger.debug(f"Successfully get {arxiv_id}")
+        return data
+    except:
+        logger.error(f"Fail to download {arxiv_id}")
+        return None
+
+def get_author_info(
+        author_ids,
+        logger=logger,
+        count=0
+):
+    '''Get author data from semantics scholar'''
+    try:
+        r = requests.post(
+            'https://api.semanticscholar.org/graph/v1/author/batch',
+            params={'fields': 'name,citationCount,paperCount'},
+            json={"ids": author_ids}
+        )
+        r.raise_for_status()
+        return r.json()
+    except:
+        if count < 3:
+            logger.warning(f"Fail {count+1} time, try again in 3 secs")
+            time.sleep(3)
+            get_author_info(author_ids, logger, count+1)
+        else:
+            logger.error(f"Failed to get {author_ids} for 3 times. Give up.")
+            return None
 
 def check_download(
         pdfids : list,
