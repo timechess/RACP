@@ -50,7 +50,7 @@ if __name__ == "__main__":
             pdfids = crawl.get_ids(arg.year, arg.fields, arg.save_path, logger)
 
     if arg.check_download:
-        pdfids = crawl.check_download(pdfids, arg.save_path, logger)
+        pdfids = crawl.check_download(pdfids, arg.save_path, logger)[:15000]
     pdfnum = len(pdfids)//arg.threads
     pdfid_split = [pdfids[pdfnum*i:pdfnum*(i+1)] for i in range(arg.threads)]
     if len(pdfids)-pdfnum*arg.threads != 0:

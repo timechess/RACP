@@ -22,7 +22,7 @@ def get_ids(
         headers=None, 
         timeout=30
 ):
-    '''Get pdf arXiv ids from specified field and years
+    '''Get pdf arXiv ids from specified field and years.
     
     Given years and field, it crawls from arXiV and get all pdf ids that satisfies requirements.
     For example, get_links(3, [cs.IR], ..) returns all cs.IR papers in 2021-2023 and saves data into
@@ -105,7 +105,16 @@ def get_ss_data_by_arxiv(
         logger=logger, 
         count=0
 ):
-    '''Get semantics scholar data given arXiv id'''
+    '''Get semantics scholar data given arXiv id.
+    
+    Args:
+        arxiv_ids: A list of arXiv ids to crawl.
+        logger: loguru logger.
+        count: Record the number of trys.
+
+    Returns:
+        data: A json dictionary from semantics scholar api.
+    '''
     try:
         r = requests.post(
             'https://api.semanticscholar.org/graph/v1/paper/batch',
@@ -128,7 +137,16 @@ def get_ss_data_by_ss(
         logger=logger, 
         count = 0
 ):
-    '''Get semantics scholar data given ss id'''
+    '''Get semantics scholar data given semantics scholar ids.
+    
+    Args:
+        ss_ids: A List of semantics scholar paper ids.
+        loggger: loguru logger.
+        count: Record the number of trys.
+    
+    Returns:
+        data: A json dictionary from semantics scholar api.
+    '''
     try:
         r = requests.post(
             'https://api.semanticscholar.org/graph/v1/paper/batch',
