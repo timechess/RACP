@@ -1,10 +1,5 @@
 import os
 import json
-import fitz
-import re
-from nltk.corpus import wordnet
-from nltk import word_tokenize, pos_tag
-from nltk.stem import WordNetLemmatizer
 from loguru import logger
 logger.add(
     "log.log",
@@ -48,44 +43,34 @@ def save_json(
     logger.debug(f"Process {os.getpid()} : Saving {name} to {path}")
     with open(path, "w", encoding= "utf-8") as f:
         json.dump(obj, f, indent=4)
-
-def get_wordnet_pos(tag):
-    '''Helper function for tokenize'''
-    if tag.startswith('J'):
-        return wordnet.ADJ
-    elif tag.startswith('V'):
-        return wordnet.VERB
-    elif tag.startswith('N'):
-        return wordnet.NOUN
-    elif tag.startswith('R'):
-        return wordnet.ADV
-    else:
-        return None
-
-def tokenize(
-    text : str, 
-    stopwords : list
-):
-    '''Tokenization, remove stopwords, lemmatization
+        
     
-    The text process function. It needs some nltk_data downloaded in advance.
-    The stopwords can be downloaded from https://github.com/elephantnose/characters.
-
+def CCBC(paperA,paperB):
+    """Calculate citation similarity index. 
+    
+    CCBC stands for co-citation and bib coupling index 
+    plus direct citation as well 
+    
     Args:
-        text: Raw text to process.
-        stopwords: The List of stopwords.
+        paperA: PaperItem 
+        paperB: PaperItem
     
     Returns:
-        tokens: A List of tokens.
-    '''
-    text = text.lower()
-    tokens = word_tokenize(text)
-    tags = pos_tag(tokens)
-    wnl = WordNetLemmatizer()
-    result = []
-    for tag in tags:
-        wordnet_pos = get_wordnet_pos(tag[1]) or wordnet.NOUN
-        lemma = wnl.lemmatize(tag[0], pos=wordnet_pos)
-        if lemma not in stopwords:
-            result.append(lemma)
-    return result
+        index: [0,1.5]
+    """
+    score = 0 
+    # 1. direct citation relationship 
+    if paperA.paperId in paperB.citations or \
+        paperB.paperId in paperA.citations:
+            score += 0.5 
+    # 2. shared citation ratio 
+    cocite = paperA.citations and  paperB.citations
+    alcite = paperA.citations or   paperB.citations
+    score += len(cocite) / len(alcite)
+    # 3. shared reference ratio 
+    coref = paperA.references and  paperB.references
+    alref = paperA.references or   paperB.references
+    score += len(coref) / len(alref)
+    
+    return score  
+
