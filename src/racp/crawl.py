@@ -4,9 +4,9 @@ from tqdm import tqdm
 import os
 import json
 import time
+import fitz
 from racp.utils import save_json, makedir
 from loguru import logger
-from langchain.document_loaders import ArxivLoader
 
 logger.add(
     "log.log",
@@ -101,25 +101,28 @@ def get_ids(
     return ids
 
 def get_ss_data_by_arxiv(
-        arxiv_ids, 
+        arxiv_id, 
         logger=logger, 
+        key="",
         count=0
 ):
     '''Get semantics scholar data given arXiv id.
     
     Args:
-        arxiv_ids: A list of arXiv ids to crawl.
+        arxiv_id: The arXiv id of the paper.
         logger: loguru logger.
+        key: The semantics api key, default to "".
         count: Record the number of trys.
 
     Returns:
         data: A json dictionary from semantics scholar api.
     '''
+    headers = {"x-api-key": key}
     try:
-        r = requests.post(
-            'https://api.semanticscholar.org/graph/v1/paper/batch',
-            params={'fields': 'externalIds,citations,publicationTypes,authors,references',},
-            json={"ids": [f"ARXIV:{id}" for id in arxiv_ids]}
+        r = requests.get(
+            f'https://api.semanticscholar.org/graph/v1/paper/arXiv:{arxiv_id}',
+            params={'fields': 'title,externalIds,citations,publicationTypes,authors,references,publicationDate,abstract',},
+            headers=headers
         )
         r.raise_for_status()
         return r.json()
@@ -127,31 +130,34 @@ def get_ss_data_by_arxiv(
         if count < 3:
             logger.warning(f"Fail {count+1} time, try again in 3 secs")
             time.sleep(3)
-            return get_ss_data_by_arxiv(arxiv_ids, logger, count+1)
+            return get_ss_data_by_arxiv(arxiv_id, logger, key, count+1)
         else:
-            logger.error(f"Failed to get {arxiv_ids} for 3 times. Give up.")
-            return None
+            logger.error(f"Failed to get {arxiv_id} for 3 times. Give up.")
+            raise ConnectionError()
     
 def get_ss_data_by_ss(
-        ss_ids, 
+        ss_id, 
         logger=logger, 
+        key = "",
         count = 0
 ):
     '''Get semantics scholar data given semantics scholar ids.
     
     Args:
-        ss_ids: A List of semantics scholar paper ids.
+        ss_id: The semantics scholar paper id.
         loggger: loguru logger.
+        key: The semantics api key, default to "".
         count: Record the number of trys.
     
     Returns:
         data: A json dictionary from semantics scholar api.
     '''
+    headers = {"x-api-key": key}
     try:
-        r = requests.post(
-            'https://api.semanticscholar.org/graph/v1/paper/batch',
-            params={'fields': 'externalIds,citations,publicationTypes,authors,references',},
-            json={"ids": ss_ids}
+        r = requests.get(
+            f'https://api.semanticscholar.org/graph/v1/paper/{ss_id}',
+            params={'fields': 'title,externalIds,citations,publicationTypes,authors,references,publicationDate,abstract',},
+            headers=headers
         )
         r.raise_for_status()
         return r.json()
@@ -159,48 +165,51 @@ def get_ss_data_by_ss(
         if count < 3:
             logger.warning(f"Fail {count+1} time, try again in 3 secs")
             time.sleep(3)
-            return get_ss_data_by_ss(ss_ids, logger, count+1)
+            return get_ss_data_by_ss(ss_id, logger, key, count+1)
         else:
-            logger.error(f"Failed to get {ss_ids} for 3 times. Give up.")
-            return None
+            logger.error(f"Failed to get {ss_id} for 3 times. Give up.")
+            raise ConnectionError()
         
 def get_arxiv_data(
         arxiv_id : str,
         logger=logger
     ):
-    '''Use the api from `langchain` to download data given arXiv ids.
+    '''Given arXiv id, this function gets pdf text data from arXiv.
     
-    This function uses `ArxivLoader` from `langchain`. 
-
     Args:
         arxiv_id: The arXiv id of the paper you want.
         logger: loguru logger.
         
     Returns:
-        data: A dictionary containing the paper's metedata and content.
+        text: Raw text of the pdf extracted by PyMuPDF.
     '''
     try:
-        document = ArxivLoader(arxiv_id).load()[0] 
-        content = document.page_content
-        data = document.metadata
-        data["Content"] = content
+        document = requests.get(f"https://arxiv.org/pdf/{arxiv_id}")
+        document.raise_for_status()
+        text = ""
+        pdf = fitz.open(stream=document.content, filetype="pdf")
+        for page in pdf.pages():
+            text += page.get_text()
         logger.debug(f"Successfully get {arxiv_id}")
-        return data
+        return text
     except:
         logger.error(f"Fail to download {arxiv_id}")
-        return None
+        raise ConnectionError()
 
 def get_author_info(
         author_ids,
         logger=logger,
+        key="",
         count=0
 ):
     '''Get author data from semantics scholar'''
+    headers = {"x-api-key": key}
     try:
         r = requests.post(
             'https://api.semanticscholar.org/graph/v1/author/batch',
             params={'fields': 'name,citationCount,paperCount'},
-            json={"ids": author_ids}
+            json={"ids": author_ids},
+            headers=headers
         )
         r.raise_for_status()
         return r.json()
@@ -208,10 +217,10 @@ def get_author_info(
         if count < 3:
             logger.warning(f"Fail {count+1} time, try again in 3 secs")
             time.sleep(3)
-            get_author_info(author_ids, logger, count+1)
+            get_author_info(author_ids, logger, key, count+1)
         else:
             logger.error(f"Failed to get {author_ids} for 3 times. Give up.")
-            return None
+            raise ConnectionError()
 
 def check_download(
         pdfids : list,
@@ -231,11 +240,8 @@ def check_download(
     Returns:
         failed_ids: The ids of failed pdfs.
     '''
-    existing = os.listdir(os.path.join(save_path, "data"))
-    failed_ids = []
-    for pdfid in pdfids:
-        if pdfid + ".json" not in existing:
-            failed_ids.append(pdfid)
+    existing = set(map(lambda file: os.path.splitext(file)[0], os.listdir(os.path.join(save_path, "data"))))
+    failed_ids = list(set(pdfids) - existing)
     logger.info(f"{len(failed_ids)} pdfs are failed")
     return failed_ids
 

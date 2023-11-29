@@ -6,3 +6,5 @@ site
 src/racp.egg-info
 data
 *.pdf
+resources/api-key.txt
+dataset.json
