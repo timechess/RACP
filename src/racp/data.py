@@ -1,7 +1,6 @@
 import os
 import json
 from tqdm import tqdm
-import datetime
 import racp.crawl as crawl
 from racp.utils import save_json
 from torch.utils.data import Dataset
@@ -60,7 +59,8 @@ class PaperItem:
         self.citations = set([item["paperId"] for item in data["citations"]])
         self.references = set([item["paperId"] for item in data["references"]])
         try:
-            self.authors = crawl.get_author_info([item["authorId"] for item in data["authors"]], self.logger, key)
+            self.authors = crawl.get_author_info([item["authorId"] \
+                                                  for item in data["authors"]], self.logger, key)
         except:
             raise ConnectionError("Fail to get semantics scholar data.")
         self.publication = data["publicationTypes"]
@@ -89,7 +89,8 @@ class PaperItem:
     
     def save_json(self, save_path):
         '''Save as a json file'''
-        save_json(self.to_json(),os.path.join(save_path, f"{self.arxiv_id}.json"),self.logger, f"{self.arxiv_id}.json")
+        save_json(self.to_json(),os.path.join(save_path, f"{self.arxiv_id}.json"),\
+                  self.logger, f"{self.arxiv_id}.json")
     
     def load_json(self, json_data):
         '''Load from a json dictionary'''

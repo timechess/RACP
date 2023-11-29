@@ -12,7 +12,8 @@ setup(
         "nltk",
         "lxml",
         "arxiv",
-        "langchain"
+        "langchain",
+        "torch"
     ],
     python_requires = ">=3.8",
     packages = ["racp"],

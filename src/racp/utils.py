@@ -1,13 +1,15 @@
 import os
 import json
 from loguru import logger
+
 logger.add(
     "log.log",
     enqueue=True,
     level="ERROR"
 )
+
 def makedir(
-    path : int, 
+    path : str, 
     logger
 ):
     '''A mkdir command that can recursively create directory and output log.
