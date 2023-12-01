@@ -13,7 +13,8 @@ setup(
         "lxml",
         "arxiv",
         "langchain",
-        "torch"
+        "torch",
+        "powerlaw"
     ],
     python_requires = ">=3.8",
     packages = ["racp"],
