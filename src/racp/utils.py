@@ -73,6 +73,10 @@ def powerlaw_fit_cdf(
     fit_method="Likelihood"
 ):
     '''This function use `powerlaw` to fit the given data and returns cdf.
+    
+    Note that not all values in data are recorded in cdf dictionary,
+    since `powerlaw` will calculate the best xmin and throw out the
+    values below xmin. You can treat those values' cdf as 0. 
 
     Args:
         data: List or array.
@@ -87,6 +91,28 @@ def powerlaw_fit_cdf(
     cdf = dict([(cdf[0][i], cdf[1][i]) for i in range(len(cdf[0]))])
     return cdf
 
+def parse_pdf(
+    pdfpath : str,
+    stream=None
+):
+    '''Parse pdf files into raw text.
+    
+    Args:
+        pdfpath: The path to pdf file.
+        stream: If your pdf has already been read in binary mode, then use this arg.
+    
+    Returns:
+        text: Raw text.
+    '''
+    import fitz
+    if stream != None:
+        pdf = fitz.open(stream=stream, filetype="pdf")
+    else:
+        pdf = fitz.open(pdfpath)
+    text = ""
+    for page in pdf.pages():
+        text += page.get_text()
+    return text
 
 
 def CCBC(paperA,paperB):
