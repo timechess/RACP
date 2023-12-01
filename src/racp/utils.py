@@ -46,7 +46,49 @@ def save_json(
     with open(path, "w", encoding= "utf-8") as f:
         json.dump(obj, f, indent=4)
         
+
+def powerlaw_fit(
+    data,
+    xmin=None,
+    fit_method="Likelihood"
+):
+    '''This function use `powerlaw` to fit the given data and returns `powerlaw.Fit` object.
     
+    Args:
+        data: List or array.
+        xmin: The data value beyond which distributions should be fitted. 
+        fit_method: "Likelihood" as default, "KS" optional.
+
+    Returns:
+        cdf: A `powerlaw.Fit` object.
+    '''
+    import powerlaw
+    fit = powerlaw.Fit(data, xmin=xmin, fit_method=fit_method)
+    return fit
+
+
+def powerlaw_fit_cdf(
+    data,
+    xmin=None,
+    fit_method="Likelihood"
+):
+    '''This function use `powerlaw` to fit the given data and returns cdf.
+
+    Args:
+        data: List or array.
+        xmin: The data value beyond which distributions should be fitted. 
+        fit_method: "Likelihood" as default, "KS" optional.
+
+    Returns:
+        cdf: A dictionary formated as {x : cdf(x)}.
+    '''
+    fit = powerlaw_fit(data, xmin, fit_method)
+    cdf = fit.cdf()
+    cdf = dict([(cdf[0][i], cdf[1][i]) for i in range(len(cdf[0]))])
+    return cdf
+
+
+
 def CCBC(paperA,paperB):
     """Calculate citation similarity index. 
     

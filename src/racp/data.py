@@ -1,5 +1,6 @@
 import os
 import json
+import powerlaw
 from tqdm import tqdm
 import racp.crawl as crawl
 from racp.utils import save_json
@@ -124,8 +125,12 @@ class RawSet(Dataset):
         filenames = os.listdir(save_path)
         for file in tqdm(filenames):
             path = os.path.join(save_path, file)
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except:
+                print(path)
+                continue
             item = PaperItem()
             item.load_json(data)
             self.items.append(item)
@@ -186,3 +191,8 @@ class RawSet(Dataset):
             year_count[year] = year_count.get(year,0) + 1
     
         return year_count
+    
+    def paper_citations(self):
+        '''Return a dictionary of papers' citaiton counts.'''
+        return dict([(item.arxiv_id, len(item.citations)) for item in self.items])
+    

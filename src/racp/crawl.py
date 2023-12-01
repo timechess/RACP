@@ -184,7 +184,7 @@ def get_arxiv_data(
         text: Raw text of the pdf extracted by PyMuPDF.
     '''
     try:
-        document = requests.get(f"https://arxiv.org/pdf/{arxiv_id}")
+        document = requests.get(f"https://arxiv.org/pdf/{arxiv_id}",timeout=60)
         document.raise_for_status()
         text = ""
         pdf = fitz.open(stream=document.content, filetype="pdf")
