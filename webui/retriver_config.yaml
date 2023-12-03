@@ -7,3 +7,6 @@ chunk_overlap: 0
 model_name: 'sentence-transformers/all-mpnet-base-v2'
 device: 'cuda'
 normalize_embeddings: false
+
+dbpath : '/root/autodl-tmp/data'
+
