@@ -90,10 +90,10 @@ class PaperItem:
         
     def to_Document(self):
         from langchain_core.documents.base import Document
-        data = self.to_json()
-        data.pop('abstract', None)
-        data.pop('content', None)
-        doc = Document(metadata=data,page_content=data['content'])
+        abstract = self.abstract
+        content = self.content
+        metadata = {"source":self.arxiv_id,"title":self.title}
+        doc = Document(metadata=metadata,page_content=abstract)
         return doc 
     
     def save_json(self, save_path):
@@ -213,6 +213,10 @@ class RawSet(Dataset):
             year_count[year] = year_count.get(year,0) + 1
     
         return year_count
+
+    def paper_citations(self):
+        '''Return a dictionary of papers' citaiton counts.'''
+        return dict([(item.arxiv_id, len(item.citations)) for item in self.items])
     def topk(self, paper, k=100):
         """返回列表中的前k个相关论文"""
         sim = np.zeros(self.__len__())
@@ -226,7 +230,6 @@ class RawSet(Dataset):
         # 获取对应的top k项
         topk_items = [self.__getitem__(i) for i in topk_indices]
         return topk_items
-    def paper_citations(self):
-        '''Return a dictionary of papers' citaiton counts.'''
-        return dict([(item.arxiv_id, len(item.citations)) for item in self.items])
-    
+    def load_from_papers(self,papers):
+        for paperitem in papers:
+            self.items.append(paperitem)
