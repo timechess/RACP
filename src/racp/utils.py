@@ -126,7 +126,7 @@ def CCBC(paperA,paperB):
         paperB: PaperItem
     
     Returns:
-        index: [0,1.5]
+        index: [0,2.5]
     """
     score = 0 
     # 1. direct citation relationship 
