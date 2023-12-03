@@ -74,9 +74,7 @@ def powerlaw_fit_cdf(
 ):
     '''This function use `powerlaw` to fit the given data and returns cdf.
     
-    Note that not all values in data are recorded in cdf dictionary,
-    since `powerlaw` will calculate the best xmin and throw out the
-    values below xmin. You can treat those values' cdf as 0. 
+    
 
     Args:
         data: List or array.
@@ -115,7 +113,7 @@ def parse_pdf(
     return text
 
 
-def CCBC(paperA,paperB):
+def CCBC(paperA, paperB, weight=dict()):
     """Calculate citation similarity index. 
     
     CCBC stands for co-citation and bib coupling index 
@@ -124,23 +122,27 @@ def CCBC(paperA,paperB):
     Args:
         paperA: PaperItem 
         paperB: PaperItem
+        weight: A dict containing each paper's weight, default to 1.
     
     Returns:
-        index: [0,1.5]
+        index: [0,1]
     """
     score = 0 
     # 1. direct citation relationship 
-    if paperA.paperId in paperB.citations or \
-        paperB.paperId in paperA.citations:
-            score += 0.5 
+    if paperA.ss_id in paperB.citations:
+        score += weight.get(paperA.arxiv_id, 1)/6
+    if paperB.ss_id in paperA.citations:
+        score += weight.get(paperB.arxiv_id, 1)/6
     # 2. shared citation ratio 
-    cocite = paperA.citations and  paperB.citations
-    alcite = paperA.citations or   paperB.citations
-    score += len(cocite) / len(alcite)
+    cocite = paperA.citations.intersection(paperB.citations)
+    alcite = paperA.citations.union(paperB.citations)
+    score += weight.get(paperA.arxiv_id, 1) * weight.get(paperB.arxiv_id, 1) * \
+                len(cocite) / len(alcite) / 3
     # 3. shared reference ratio 
-    coref = paperA.references and  paperB.references
-    alref = paperA.references or   paperB.references
-    score += len(coref) / len(alref)
+    coref = paperA.references.intersection(paperB.references)
+    alref = paperA.references.union(paperB.references)
+    score += sum([weight.get(item.arxiv_id, 1) for item in coref]) / \
+                sum([weight.get(item.arxiv_id, 1) for item in alref]) / 3
     
     return score  
 

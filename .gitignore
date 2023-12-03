@@ -8,3 +8,6 @@ data
 *.pdf
 resources/api-key.txt
 dataset.json
+*.json
+*.gz
+*.jsonl

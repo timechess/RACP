@@ -14,7 +14,8 @@ setup(
         "arxiv",
         "langchain",
         "torch",
-        "powerlaw"
+        "powerlaw",
+        "jsonlines"
     ],
     python_requires = ">=3.8",
     packages = ["racp"],

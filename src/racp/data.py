@@ -1,6 +1,6 @@
 import os
 import json
-import powerlaw
+import jsonlines
 from tqdm import tqdm
 import racp.crawl as crawl
 from racp.utils import save_json
@@ -145,15 +145,29 @@ class RawSet(Dataset):
         return len(self.items)
     
     def save(self, filepath):
-        with open(filepath, "w", encoding="utf-8") as f:
-            data = list(map(lambda item: item.to_json(), self.items))
-            json.dump(data, f)
+        '''Save as jsonl file.'''
+        with jsonlines.open(filepath, "w") as f:
+            for item in self.items:
+                data = item.to_json()
+                f.write(data)
     
     def load(self, filepath):
-        with open(filepath, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            self.items = list(map(lambda item: PaperItem(data=item), data))
-            
+        '''Load from a jsonl file.'''
+        with jsonlines.open(filepath, "r") as f:
+            for item in f.readlines():
+                self.items.append(PaperItem(data=item))
+    
+    def all_papers(self):
+        '''Return a set of semantics scholar ids involved.'''
+        papers = set()
+        for item in self.items:
+            papers.add(item.ss_id)
+            for cite in item.citations:
+                papers.add(cite)
+            for ref in item.references:
+                papers.add(ref)
+        return papers
+    
     def all_authors(self):
         '''Return a dictionary with all author ids in the dataset as keys.'''
         all_authors = {}
