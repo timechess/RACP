@@ -35,13 +35,14 @@ class Retriver():
         # Load documents into Chroma vector store
         self.db = Chroma.from_documents(documents, self.hf)
     def build_retriver_from_dataset(self,dataset):
-        data = [i.to_Document() for k,i in enumerate(dataset) if k < 100]
+        # TODO : remove k < 2000 
+        data = [i.to_Document() for k,i in enumerate(dataset) if k < 2000 ]
         print(f'Loaded {len(data)} documents using dataset ')
         documents = self.text_splitter.split_documents(data)
         self.db = Chroma.from_documents(documents,self.hf)
     def retrival(self,query,k=10):
         docs = self.db.similarity_search_with_relevance_scores(query,k=k)
-        result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'relevance':doc[1]} for doc in docs if doc[1]>0]
+        result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'quality':doc[0].metadata['quality'],'relevance':doc[1],} for doc in docs if doc[1]>0]
         return result 
         # return  f"Most similar document's page content:\n{docs[0].page_content}"
 def main(args):
@@ -50,8 +51,8 @@ def main(args):
     database = RawSet(config.dbpath)
     print(len(database))
     retriver = Retriver(config,database)
-    docs = retriver.retrival("'Research automation efforts usually employ AI as a tool to automate specific\ntasks within the research process. To create an AI that truly conduct research\nthemselves, it must independently generate hypotheses, design verification\nplans, and execute verification. Therefore, we investigated if an AI itself")
-    print(len(docs))
+    result = retriver.retrival("'Research automation efforts usually employ AI as a tool to automate specific\ntasks within the research process. To create an AI that truly conduct research\nthemselves, it must independently generate hypotheses, design verification\nplans, and execute verification. Therefore, we investigated if an AI itself")
+    print(len(result))
     print(docs[0])
 
 if __name__ == "__main__":

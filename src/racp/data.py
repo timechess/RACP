@@ -6,6 +6,7 @@ import racp.crawl as crawl
 from racp.utils import save_json,ccbc 
 from torch.utils.data import Dataset
 import numpy as np 
+from datetime import datetime
 class PaperItem:
     '''A structure that store data of a paper.
     
@@ -42,6 +43,7 @@ class PaperItem:
         self.abstract = ""
         self.content = ""
         self.logger = logger
+        self._quality = None 
         if arxiv_id != None:
             self.get_data_by_arxiv(arxiv_id, key)
         if data != None:
@@ -91,8 +93,9 @@ class PaperItem:
     def to_Document(self):
         from langchain_core.documents.base import Document
         abstract = self.abstract
+        # TODO : content retrival 
         content = self.content
-        metadata = {"source":self.arxiv_id,"title":self.title}
+        metadata = {"source":self.arxiv_id,"title":self.title,"quality":self.quality}
         doc = Document(metadata=metadata,page_content=abstract)
         return doc 
     
@@ -118,6 +121,27 @@ class PaperItem:
             self.content = json_data.get("content", "")
         except:
             raise ValueError("Fail to load data, please check the items.")
+    
+    @property
+    def quality(self):
+        """Evaluate confidence quality."""
+        if self._quality is None:  # Calculate only if not computed yet
+            # TODO: normalize citation 
+            pubdate = datetime.strptime(self.date, "%Y-%m-%d").date()
+            today = datetime.now().date()
+            days_diff = (today - pubdate).days
+            cite_diff = self.citations / days_diff
+            cite_score = cite_diff + np.log(self.citations) # the citation larger than dozens is enough for reality 
+            # TODO: Author score considering the history of publication
+            author_score = 0 
+            x = (days_diff / 225)
+            dates_core = np.e * x * np.exp(-x)
+
+            self._quality = dates_core+cite_score+ author_score 
+
+        return self._quality
+            
+        
         
 
 class RawSet(Dataset):
