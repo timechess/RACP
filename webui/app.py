@@ -5,26 +5,18 @@ server_key="GKlG2S2Uz3IK"
 secret_key = secrets.token_hex(32)
 app = Flask(__name__)
 app.secret_key = secret_key  # 设置用于加密 session 数据的密钥
-class ConfigObject:
-    def __init__(self, config_dict):
-        self.__dict__.update(config_dict)
 
-def load_config(config_path):
-    with open(config_path, 'r') as config_file:
-        config_data = yaml.safe_load(config_file)
-
-    if config_data is not None:
-        return ConfigObject(config_data)
-    else:
-        return None
 
 
 import argparse
 import yaml
 from naive_retriver import Retriver
-from racp.data import PaperItem 
-config = load_config("./retriver_config.yaml")
+from racp.data import PaperItem ,RawSet
+from racp import util 
+config = util.load_config("./retriver_config.yaml")
 retriver = Retriver(config)
+database = RawSet(config.dbpath)
+
 
 def process_text_and_file(input_text, uploaded_file):
     if input_text:
@@ -35,11 +27,13 @@ def process_text_and_file(input_text, uploaded_file):
     else:
         return ""
 
-def process_arxiv_id(arxiv_id):
+def process_arxiv_id(arxiv_id,k=100):
     # 根据arxiv id 爬 pdf -> 文档 
     try:
         paper = PaperItem(arxiv_id=arxiv_id)
-        
+        topkitems = database.topk(paper,k=k)
+        # build retriver 
+        local_retriver = Retriver(config)
     except ConnectionError as e:
         result = e 
     
