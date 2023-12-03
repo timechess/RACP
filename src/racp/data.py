@@ -87,7 +87,13 @@ class PaperItem:
             "abstract": self.abstract,
             "content": self.content
         }
-    
+    def to_Document(self):
+        from langchain_core.documents.base import Document
+        data = self.to_json()
+        data.pop('abstract', None)
+        data.pop('content', None)
+        doc = Document(metadata=data,page_content=data['content'])
+        return doc 
     def save_json(self, save_path):
         '''Save as a json file'''
         save_json(self.to_json(),os.path.join(save_path, f"{self.arxiv_id}.json"),\
@@ -137,7 +143,6 @@ class RawSet(Dataset):
     
     def add_item(self, item : PaperItem):
         self.items.append(item)
-    
     def __getitem__(self, index) -> PaperItem:
         return self.items[index]
     
