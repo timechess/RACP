@@ -3,9 +3,9 @@ import json
 import jsonlines
 from tqdm import tqdm
 import racp.crawl as crawl
-from racp.utils import save_json
+from racp.utils import save_json,ccbc 
 from torch.utils.data import Dataset
-
+import numpy as np 
 class PaperItem:
     '''A structure that store data of a paper.
     
@@ -213,7 +213,19 @@ class RawSet(Dataset):
             year_count[year] = year_count.get(year,0) + 1
     
         return year_count
-    
+    def topk(self, paper, k=100):
+        """返回列表中的前k个相关论文"""
+        sim = np.zeros(self.__len__())
+        for i in range(self.__len__()):
+            paper_i = self.__getitem__(i)
+            sim[i] = ccbc(paper, paper_i)
+        
+        # 使用np.argsort获取排序后的索引数组
+        topk_indices = np.argsort(sim)[::-1][:k]
+
+        # 获取对应的top k项
+        topk_items = [self.__getitem__(i) for i in topk_indices]
+        return topk_items
     def paper_citations(self):
         '''Return a dictionary of papers' citaiton counts.'''
         return dict([(item.arxiv_id, len(item.citations)) for item in self.items])
