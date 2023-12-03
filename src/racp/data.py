@@ -127,11 +127,12 @@ class PaperItem:
         """Evaluate confidence quality."""
         if self._quality is None:  # Calculate only if not computed yet
             # TODO: normalize citation 
+            cite_num = len(self.citations)
             pubdate = datetime.strptime(self.date, "%Y-%m-%d").date()
             today = datetime.now().date()
             days_diff = (today - pubdate).days
-            cite_diff = self.citations / days_diff
-            cite_score = cite_diff + np.log(self.citations) # the citation larger than dozens is enough for reality 
+            cite_diff =  cite_num/ days_diff
+            cite_score = cite_diff + np.log(cite_num+1e-7) # the citation larger than dozens is enough for reality 
             # TODO: Author score considering the history of publication
             author_score = 0 
             x = (days_diff / 225)

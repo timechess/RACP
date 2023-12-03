@@ -53,7 +53,7 @@ def main(args):
     retriver = Retriver(config,database)
     result = retriver.retrival("'Research automation efforts usually employ AI as a tool to automate specific\ntasks within the research process. To create an AI that truly conduct research\nthemselves, it must independently generate hypotheses, design verification\nplans, and execute verification. Therefore, we investigated if an AI itself")
     print(len(result))
-    print(docs[0])
+    print(result[0])
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Perform similarity search on documents.")

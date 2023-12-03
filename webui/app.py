@@ -13,10 +13,11 @@ import yaml
 from naive_retriver import Retriver
 from racp.data import PaperItem ,RawSet
 from racp import utils 
+print("===================================")
 config = utils.load_config("./retriver_config.yaml")
 retriver = Retriver(config)
 database = RawSet(config.dbpath)
-
+print("===================================")
 
 def process_text_and_file(input_text, uploaded_file):
     if input_text:
@@ -32,13 +33,11 @@ def process_arxiv_id(arxiv_id,k=1000):
     try:
         paper = PaperItem(arxiv_id=arxiv_id)
         topkitems = database.topk(paper,k=k)
-        topkpaper = database()
+        topkpaper = RawSet()
         topkpaper.load_from_papers(topkitems)
         # build retriver 
         local_retriver = Retriver(config,topkpaper)
         result = local_retriver.retrival(paper.abstract,k=10)
-        
-        
     except ConnectionError as e:
         result = e 
     
@@ -61,17 +60,18 @@ def index():
             # 调用处理arXiv ID的函数
             arxiv_result = process_arxiv_id(arxiv_id)
             session['arxiv_result'] = arxiv_result
-
+            # 将arXiv结果存储在session中
+            # TODO : result and table data demo 
+            session['retrieval_results'] = result
+        else:
         # 处理文本输入和文件
-        processed_text = process_text_and_file(input_text, uploaded_file)
+            processed_text = process_text_and_file(input_text, uploaded_file)
 
-        # 将结果存储在session中，以便在下一次请求时使用
-        session['processed_text'] = processed_text
-        result = retriver.retrival(processed_text)
+            # 将结果存储在session中，以便在下一次请求时使用
+            session['processed_text'] = processed_text
+            result = retriver.retrival(processed_text)
 
-        # 将arXiv结果存储在session中
-        # TODO : result and table data demo 
-        session['retrieval_results'] = result
+
         # 模拟获取 Papername、arXiv ID、quality 和 relevance 数据的列表
         table_data = [
             {'Papername': 'Paper1', 'arxiv_id': '1234.5678', 'quality': 0.85, 'relevance': 0.92},
