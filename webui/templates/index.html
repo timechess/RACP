@@ -26,6 +26,23 @@
             cursor: pointer;
             border-radius: 8px;
         }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -59,13 +76,25 @@
         <!-- 调整Retrieval按钮的样式 -->
         <input type="submit" value="Retrieval" class="submit_button">
     </form>
-    {% if input_text %}
-        <h2>Description:</h2>
-        <p>{{ input_text }}</p>
-    {% endif %}
-    {% if processed_text %}
-        <h2>Result:</h2>
-        <p>{{ processed_text }}</p>
+
+    {% if table_data %}
+        <!-- 显示表格 -->
+        <table>
+            <tr>
+                <th>Papername</th>
+                <th>arXiv ID</th>
+                <th>Quality</th>
+                <th>Relevance</th>
+            </tr>
+            {% for row in table_data %}
+                <tr>
+                    <td>{{ row.Papername }}</td>
+                    <td>{{ row.arxiv_id }}</td>
+                    <td>{{ row.quality }}</td>
+                    <td>{{ row.relevance }}</td>
+                </tr>
+            {% endfor %}
+        </table>
     {% endif %}
 </body>
 </html>
