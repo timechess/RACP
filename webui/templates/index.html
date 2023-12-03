@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relevance Augmented Connected Papers</title>
+</head>
+<body>
+    <h1>Relevance Augmented Connected Papers</h1>
+    <form method="post" action="/" enctype="multipart/form-data">
+        <label for="input_text">Description</label>
+        <br>
+        <textarea name="input_text" id="input_text" rows="4" cols="50"></textarea>
+        <br>
+
+        <!-- 添加文件上传按钮 -->
+        <label for="file_input">Upload File</label>
+        <br>
+        <input type="file" name="file_input" id="file_input">
+        <br>
+
+        <input type="submit" value="Retrieval">
+        <br>
+    </form>
+    {% if input_text %}
+        <h2>Description:</h2>
+        <p>{{ input_text }}</p>
+    {% endif %}
+    {% if processed_text %}
+        <h2>Result:</h2>
+        <p>{{ processed_text }}</p>
+    {% endif %}
+</body>
+</html>

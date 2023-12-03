@@ -29,7 +29,7 @@ class Retriver():
 
         # Load documents into Chroma vector store
         self.db = Chroma.from_documents(documents, hf)
-    def retrival(query):
+    def retrival(self,query):
         docs = self.db.similarity_search(query)
         return  f"Most similar document's page content:\n{docs[0].page_content}"
 def main(args):
