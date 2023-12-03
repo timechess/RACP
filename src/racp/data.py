@@ -87,6 +87,7 @@ class PaperItem:
             "abstract": self.abstract,
             "content": self.content
         }
+        
     def to_Document(self):
         from langchain_core.documents.base import Document
         data = self.to_json()
@@ -94,6 +95,7 @@ class PaperItem:
         data.pop('content', None)
         doc = Document(metadata=data,page_content=data['content'])
         return doc 
+    
     def save_json(self, save_path):
         '''Save as a json file'''
         save_json(self.to_json(),os.path.join(save_path, f"{self.arxiv_id}.json"),\
@@ -104,16 +106,16 @@ class PaperItem:
         if not isinstance(json_data, dict):
             raise ValueError("Please pass in a dictionary")
         try:
-            self.arxiv_id = json_data["arxivId"]
-            self.ss_id = json_data["paperId"]
-            self.citations = set(json_data["citations"])
-            self.references = set(json_data["references"])
-            self.authors =  json_data["authors"]
-            self.publication = json_data["publication"]
-            self.date = json_data["date"]
-            self.title = json_data["title"]
-            self.abstract = json_data["abstract"]
-            self.content = json_data["content"]
+            self.arxiv_id = json_data.get("arxivId", "")
+            self.ss_id = json_data.get("paperId", "")
+            self.citations = set(json_data.get("citations", []))
+            self.references = set(json_data.get("references",[]))
+            self.authors =  json_data.get("authors", [])
+            self.publication = json_data.get("publication", [])
+            self.date = json_data.get("date", "")
+            self.title = json_data.get("title", "")
+            self.abstract = json_data.get("abstract", "")
+            self.content = json_data.get("content", "")
         except:
             raise ValueError("Fail to load data, please check the items.")
         
@@ -143,6 +145,7 @@ class RawSet(Dataset):
     
     def add_item(self, item : PaperItem):
         self.items.append(item)
+        
     def __getitem__(self, index) -> PaperItem:
         return self.items[index]
     
@@ -159,7 +162,7 @@ class RawSet(Dataset):
     def load(self, filepath):
         '''Load from a jsonl file.'''
         with jsonlines.open(filepath, "r") as f:
-            for item in f.readlines():
+            for item in f:
                 self.items.append(PaperItem(data=item))
     
     def all_papers(self):

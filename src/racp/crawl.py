@@ -222,6 +222,35 @@ def get_author_info(
             logger.error(f"Failed to get {author_ids} for 3 times. Give up.")
             raise ConnectionError()
 
+def get_citaions(
+    ss_ids : list,
+    key=""
+):
+    '''Get citationCount from semantics scholar.
+    
+    Args:
+        ss_ids: A list of semantics scholar id.
+        key: Semanctics scholar api key.
+        
+    Returns:
+        citationcount: A dict.
+    '''
+    citaioncount = {}
+    try:
+        r = requests.post(
+            'https://api.semanticscholar.org/graph/v1/paper/batch',
+            params={'fields': 'citationCount'},
+            json={"ids": ss_ids},
+            headers={"x-api-key": key},
+            timeout=10
+        )
+        r.raise_for_status()
+        for item in r.json():
+            citaioncount[item["paperId"]] = item["citationCount"]
+        return citaioncount
+    except:
+        raise ConnectionError()
+    
 def check_download(
         pdfids : list,
         save_path : str,

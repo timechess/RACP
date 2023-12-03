@@ -74,8 +74,12 @@ def powerlaw_fit_cdf(
 ):
     '''This function use `powerlaw` to fit the given data and returns cdf.
     
+    Note that some values not appeared in the given data will not have a cdf
+    value. For example, 100 may not exist in the data, but 99 exists. We use
+    the cdf of 99 as a substitute of the cdf of 100 in the returned dict. In 
+    addition, the returned dict's keys don't start with 0. You can treat all
+    the value less than the min of the keys as 0.
     
-
     Args:
         data: List or array.
         xmin: The data value beyond which distributions should be fitted. 
@@ -87,6 +91,16 @@ def powerlaw_fit_cdf(
     fit = powerlaw_fit(data, xmin, fit_method)
     cdf = fit.cdf()
     cdf = dict([(cdf[0][i], cdf[1][i]) for i in range(len(cdf[0]))])
+    count = min(cdf.keys())
+    extra_values = {}
+    last_cdf = 0
+    for k, v in cdf.items():
+        if k != count + 1:
+            for i in range(int(count)+1, int(k)):
+                extra_values[i] = last_cdf
+        last_cdf = v
+        count = k
+    cdf.update(extra_values)
     return cdf
 
 def parse_pdf(
@@ -112,8 +126,36 @@ def parse_pdf(
         text += page.get_text()
     return text
 
+def ccbc(paperA,paperB):
+    """Calculate citation similarity index. 
+    
+    CCBC stands for co-citation and bib coupling index 
+    plus direct citation as well 
+    
+    Args:
+        paperA: PaperItem 
+        paperB: PaperItem
+    
+    Returns:
+        index: [0,1]
+    """
+    score = 0 
+    # 1. direct citation relationship 
+    if paperA.ss_id in paperB.citations or \
+        paperB.ss_id in paperA.citations:
+            score += 0.5 
+    # 2. shared citation ratio 
+    cocite = paperA.citations.intersection(paperB.citations)
+    alcite = paperA.citations.union(paperB.citations)
+    score += len(cocite) / len(alcite)
+    # 3. shared reference ratio 
+    coref = paperA.references.intersection(paperB.references)
+    alref = paperA.references.union(paperB.references)
+    score += len(coref) / len(alref)
+    
+    return score / 2.5
 
-def CCBC(paperA, paperB, weight=dict()):
+def weighted_ccbc(paperA, paperB, weight=dict()):
     """Calculate citation similarity index. 
     
     CCBC stands for co-citation and bib coupling index 
@@ -130,19 +172,21 @@ def CCBC(paperA, paperB, weight=dict()):
     score = 0 
     # 1. direct citation relationship 
     if paperA.ss_id in paperB.citations:
-        score += weight.get(paperA.arxiv_id, 1)/6
+        score += weight.get(paperA.ss_id, 1)/6
     if paperB.ss_id in paperA.citations:
-        score += weight.get(paperB.arxiv_id, 1)/6
+        score += weight.get(paperB.ss_id, 1)/6
     # 2. shared citation ratio 
     cocite = paperA.citations.intersection(paperB.citations)
     alcite = paperA.citations.union(paperB.citations)
-    score += weight.get(paperA.arxiv_id, 1) * weight.get(paperB.arxiv_id, 1) * \
-                len(cocite) / len(alcite) / 3
+    if len(cocite) != 0:
+        score += weight.get(paperA.ss_id, 1) * weight.get(paperB.ss_id, 1) * \
+                    len(cocite) / len(alcite) / 3
     # 3. shared reference ratio 
     coref = paperA.references.intersection(paperB.references)
     alref = paperA.references.union(paperB.references)
-    score += sum([weight.get(item.arxiv_id, 1) for item in coref]) / \
-                sum([weight.get(item.arxiv_id, 1) for item in alref]) / 3
+    if len(coref) != 0:
+        score += sum([weight.get(ss_id, 1) for ss_id in coref]) / \
+                    sum([weight.get(ss_id, 1) for ss_id in alref]) / 3
     
     return score  
 
