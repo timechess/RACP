@@ -22,6 +22,7 @@ def load_config(config_path):
 import argparse
 import yaml
 from naive_retriver import Retriver
+from racp.data import PaperItem 
 config = load_config("./retriver_config.yaml")
 retriver = Retriver(config)
 
@@ -34,28 +35,50 @@ def process_text_and_file(input_text, uploaded_file):
     else:
         return ""
 
+def process_arxiv_id(arxiv_id):
+    # 根据arxiv id 爬 pdf -> 文档 
+    try:
+        paper = PaperItem(arxiv_id=arxiv_id)
+        
+    except ConnectionError as e:
+        result = e 
+    
+    return result
+        
+        
+    
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        # 获取文本输入
+        # 获取文本输入和文件上传
         input_text = request.form['input_text']
-
-        # 获取上传的文件
         uploaded_file = request.files['file_input']
+
+        # 获取arXiv ID输入
+        arxiv_id = request.form['arxiv_id']
+
+        # 处理arXiv ID
+        if arxiv_id:
+            # 调用处理arXiv ID的函数
+            arxiv_result = process_arxiv_id(arxiv_id)
+            session['arxiv_result'] = arxiv_result
 
         # 处理文本输入和文件
         processed_text = process_text_and_file(input_text, uploaded_file)
 
-        # 将结果存储在 session 中，以便在下一次请求时使用
+        # 将结果存储在session中，以便在下一次请求时使用
         session['processed_text'] = processed_text
         result = retriver.retrival(processed_text)
-        session['retrieval_results'] = result
-        return render_template('index.html', input_text=input_text, processed_text=result)
 
-    # 如果是 GET 请求，清空之前的结果
+        # 将arXiv结果存储在session中
+        session['retrieval_results'] = result
+
+        return render_template('index.html', input_text=input_text, processed_text=result, arxiv_result=arxiv_result)
+
+    # 如果是GET请求，清空之前的结果
     session.pop('processed_text', None)
     session.pop('retrieval_results', None)
+    session.pop('arxiv_result', None)
     return render_template('index.html')
-
 if __name__ == '__main__':
     app.run(port=6006,debug=True)
