@@ -189,4 +189,15 @@ def weighted_ccbc(paperA, paperB, weight=dict()):
                     sum([weight.get(ss_id, 1) for ss_id in alref]) / 3
     
     return score  
+class ConfigObject:
+    def __init__(self, config_dict):
+        self.__dict__.update(config_dict)
 
+def load_config(config_path):
+    with open(config_path, 'r') as config_file:
+        config_data = yaml.safe_load(config_file)
+
+    if config_data is not None:
+        return ConfigObject(config_data)
+    else:
+        return None
