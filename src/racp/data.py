@@ -96,6 +96,7 @@ class PaperItem:
         # TODO : content retrival 
         content = self.content
         metadata = {"source":self.arxiv_id,"title":self.title,"quality":self.quality}
+        metadata = {"source":self.arxiv_id,"title":self.title,"quality":str(self.quality)}
         doc = Document(metadata=metadata,page_content=abstract)
         return doc 
     
@@ -167,6 +168,9 @@ class RawSet(Dataset):
             item = PaperItem()
             item.load_json(data)
             self.items.append(item)
+            # TODO : remove for deveplop 
+            if len(self.items)>10000:
+                break
     
     def add_item(self, item : PaperItem):
         self.items.append(item)

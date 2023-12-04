@@ -6,17 +6,15 @@ secret_key = secrets.token_hex(32)
 app = Flask(__name__)
 app.secret_key = secret_key  # 设置用于加密 session 数据的密钥
 
-
-
 import argparse
 import yaml
 from naive_retriver import Retriver
 from racp.data import PaperItem ,RawSet
 from racp import utils 
-print("===================================")
+print("1===================================1")
 config = utils.load_config("./retriver_config.yaml")
-retriver = Retriver(config)
 database = RawSet(config.dbpath)
+retriver = Retriver(config,database)
 print("===================================")
 
 def process_text_and_file(input_text, uploaded_file):
@@ -40,8 +38,9 @@ def process_arxiv_id(arxiv_id,k=1000):
         result = local_retriver.retrival(paper.abstract,k=10)
     except ConnectionError as e:
         result = e 
+        print(e)
     
-    return result
+    return {"topk":result,"abstract":paper.abstract}
         
         
     
@@ -49,6 +48,7 @@ def process_arxiv_id(arxiv_id,k=1000):
 def index():
     if request.method == 'POST':
         # 获取文本输入和文件上传
+        print("get input ")
         input_text = request.form['input_text']
         uploaded_file = request.files['file_input']
 
@@ -57,31 +57,23 @@ def index():
 
         # 处理arXiv ID
         if arxiv_id:
+            print(arxiv_id)
             # 调用处理arXiv ID的函数
             arxiv_result = process_arxiv_id(arxiv_id)
-            session['arxiv_result'] = arxiv_result
+            session['processed_text'] = arxiv_result['abstract']
+            session['arxiv_result'] = arxiv_result['topk']
             # 将arXiv结果存储在session中
             # TODO : result and table data demo 
-            session['retrieval_results'] = result
         else:
         # 处理文本输入和文件
             processed_text = process_text_and_file(input_text, uploaded_file)
-
             # 将结果存储在session中，以便在下一次请求时使用
             session['processed_text'] = processed_text
             result = retriver.retrival(processed_text)
-
-
-        # 模拟获取 Papername、arXiv ID、quality 和 relevance 数据的列表
-        table_data = [
-            {'Papername': 'Paper1', 'arxiv_id': '1234.5678', 'quality': 0.85, 'relevance': 0.92},
-            {'Papername': 'Paper2', 'arxiv_id': '5678.1234', 'quality': 0.75, 'relevance': 0.88},
-        ]
-
+            session['arxiv_result'] = result
+            
         # 将结果存储在 session 中，以便在下一次请求时使用
-        session['processed_text'] = processed_text
-        session['table_data'] = table_data
-        return render_template('index.html', input_text=input_text, processed_text=processed_text, table_data=table_data)
+        return render_template('index.html', input_text=input_text, processed_text=session['processed_text'], table_data=session['arxiv_result'])
 
     # 如果是GET请求，清空之前的结果
     session.pop('processed_text', None)
@@ -89,4 +81,4 @@ def index():
     session.pop('arxiv_result', None)
     return render_template('index.html')
 if __name__ == '__main__':
-    app.run(port=6006,debug=True)
+    app.run(port=6006,debug=False)

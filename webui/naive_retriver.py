@@ -17,8 +17,10 @@ class Retriver():
         self.text_splitter = CharacterTextSplitter(chunk_size=config.chunk_size, chunk_overlap=config.chunk_overlap)
         self.build_embedding_model(config)
         if dataset is None:
+            print("JSON")
             self.build_retriver_from_json(config)
         else:
+            print("Dataset")
             self.build_retriver_from_dataset(dataset)
     def build_embedding_model(self,config):
         # Initialize HuggingFaceEmbeddings
