@@ -44,3 +44,4 @@ class Retriver():
         result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'quality':doc[0].metadata['quality'],'relevance':doc[1],} for doc in docs if doc[1]>0]
         return result 
         # return  f"Most similar document's page content:\n{docs[0].page_content}"
+    # TODO: other retrival policy 
