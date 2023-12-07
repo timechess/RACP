@@ -133,14 +133,19 @@ class PaperItem:
             today = datetime.now().date()
             days_diff = (today - pubdate).days
             cite_diff =  cite_num/ days_diff
-            cite_score = cite_diff + np.log(cite_num+1e-7) # the citation larger than dozens is enough for reality 
+            cite_score = cite_diff + np.log(cite_num+1) # the citation larger than dozens is enough for reality 
             # TODO: Author score considering the history of publication
-            author_score = 0 
+            if len(self.authors):
+                author_citation = sum([a['citationCount'] for a in  self.authors])
+                author_paper = sum([a['paperCount'] for a in  self.authors])
+                author_score = author_paper+author_citation
+                author_score = author_score/len(self.authors)
+                author_score = np.log(author_score+1)
+            else:
+                author_score = 0 
             x = (days_diff / 225)
             dates_core = np.e * x * np.exp(-x)
-
             self._quality = dates_core+cite_score+ author_score 
-
         return self._quality
             
         
@@ -148,13 +153,13 @@ class PaperItem:
 
 class RawSet(Dataset):
     '''A torch Dataset storing raw data.'''
-    def __init__(self, save_path=None) -> None:
+    def __init__(self, save_path=None,length = -1 ) -> None:
         super().__init__()
         self.items = []  # List of PaperItems
         if save_path != None:
-            self._load_from_directory(save_path)
+            self._load_from_directory(save_path,length)
 
-    def _load_from_directory(self, save_path):
+    def _load_from_directory(self, save_path,length = -1 ):
         '''Load json files from given directory.'''
         filenames = os.listdir(save_path)
         for file in tqdm(filenames):
@@ -169,7 +174,7 @@ class RawSet(Dataset):
             item.load_json(data)
             self.items.append(item)
             # TODO : remove for deveplop 
-            if len(self.items)>10000:
+            if length>0 and len(self.items)>length:
                 break
     
     def add_item(self, item : PaperItem):
@@ -255,7 +260,6 @@ class RawSet(Dataset):
         
         # 使用np.argsort获取排序后的索引数组
         topk_indices = np.argsort(sim)[::-1][:k]
-
         # 获取对应的top k项
         topk_items = [self.__getitem__(i) for i in topk_indices]
         return topk_items

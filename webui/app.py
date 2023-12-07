@@ -8,19 +8,22 @@ app.secret_key = secret_key  # 设置用于加密 session 数据的密钥
 
 import argparse
 import yaml
-from naive_retriver import Retriver
+from racp.naive_retriver import Retriver
 from racp.data import PaperItem ,RawSet
 from racp import utils 
-print("1===================================1")
+print("start loading database...")
 config = utils.load_config("./retriver_config.yaml")
-database = RawSet(config.dbpath)
+database = RawSet(config.dbpath,length = 100)
+print("start loading retriver...")
 retriver = Retriver(config,database)
-print("===================================")
+print("initialization end ... ")
 
 def process_text_and_file(input_text, uploaded_file):
+    """return string of raw text """
     if input_text:
         return f"Processed Text: {input_text}"
     elif uploaded_file:
+        # TODO:  解析pdf 文件 抓取里面的文本 
         file_content = uploaded_file.read().decode('utf-8')
         return f"File Content: {file_content}"
     else:
@@ -63,7 +66,6 @@ def index():
             session['processed_text'] = arxiv_result['abstract']
             session['arxiv_result'] = arxiv_result['topk']
             # 将arXiv结果存储在session中
-            # TODO : result and table data demo 
         else:
         # 处理文本输入和文件
             processed_text = process_text_and_file(input_text, uploaded_file)
@@ -71,7 +73,9 @@ def index():
             session['processed_text'] = processed_text
             result = retriver.retrival(processed_text)
             session['arxiv_result'] = result
-            
+        
+        print(session['processed_text'])
+        # convert arxiv id to arxiv link 
         # 将结果存储在 session 中，以便在下一次请求时使用
         return render_template('index.html', input_text=input_text, processed_text=session['processed_text'], table_data=session['arxiv_result'])
 
@@ -81,4 +85,4 @@ def index():
     session.pop('arxiv_result', None)
     return render_template('index.html')
 if __name__ == '__main__':
-    app.run(port=6006,debug=False)
+    app.run(port=6006,debug=True)

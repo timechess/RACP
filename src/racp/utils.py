@@ -189,6 +189,10 @@ def weighted_ccbc(paperA, paperB, weight=dict()):
                     sum([weight.get(ss_id, 1) for ss_id in alref]) / 3
     
     return score  
+
+def arxivid2link(arxivid):
+    return f'<a href="https://arxiv.org/abs/{arxivid}">{arxivid}</a>'
+    # return f"https://arxiv.org/abs/{arxivid}"
 class ConfigObject:
     def __init__(self, config_dict):
         self.__dict__.update(config_dict)
