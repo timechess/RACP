@@ -12,7 +12,7 @@ def main(args):
     database.load(config.db_path)
     retriver = Retriver(config,database)
     while True:
-        query = input("请输入查询文本：")
+        query = input("Please enter query text:")
         result = retriver.retrival(query)
         print(result)
 

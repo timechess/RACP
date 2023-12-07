@@ -118,7 +118,7 @@ def parse_pdf(
     '''
     import fitz
     if stream != None:
-        pdf = fitz.open(stream=stream, filetype="pdf")
+        pdf = fitz.open(stream=stream.read(), filetype="pdf")
     else:
         pdf = fitz.open(pdfpath)
     text = ""
