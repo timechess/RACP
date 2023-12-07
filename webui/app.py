@@ -29,10 +29,10 @@ def process_text_and_file(input_text, uploaded_file):
     else:
         return ""
 
-def process_arxiv_id(arxiv_id,k=1000):
+def process_arxiv_id(arxiv_id,k=1000,api_key=""):
     # 根据arxiv id 爬 pdf -> 文档 
     try:
-        paper = PaperItem(arxiv_id=arxiv_id)
+        paper = PaperItem(arxiv_id=arxiv_id,key=api_key)
         topkitems = database.topk(paper,k=k)
         topkpaper = RawSet()
         topkpaper.load_from_papers(topkitems)
@@ -42,6 +42,7 @@ def process_arxiv_id(arxiv_id,k=1000):
     except ConnectionError as e:
         result = e 
         print(e)
+        raise ConnectionError
     
     return {"topk":result,"abstract":paper.abstract}
         
@@ -57,7 +58,7 @@ def index():
 
         # 获取arXiv ID输入
         arxiv_id = request.form['arxiv_id']
-
+        api_key = request.form['api_key']
         # 处理arXiv ID
         if arxiv_id:
             print(arxiv_id)
@@ -68,7 +69,7 @@ def index():
             # 将arXiv结果存储在session中
         else:
         # 处理文本输入和文件
-            processed_text = process_text_and_file(input_text, uploaded_file)
+            processed_text = process_text_and_file(input_text, uploaded_file,api_key)
             # 将结果存储在session中，以便在下一次请求时使用
             session['processed_text'] = processed_text
             result = retriver.retrival(processed_text)
