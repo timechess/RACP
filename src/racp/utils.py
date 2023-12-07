@@ -104,7 +104,7 @@ def powerlaw_fit_cdf(
     return cdf
 
 def parse_pdf(
-    pdfpath : str,
+    pdfpath=None,
     stream=None
 ):
     '''Parse pdf files into raw text.

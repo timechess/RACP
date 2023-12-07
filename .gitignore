@@ -11,3 +11,4 @@ dataset.json
 *.json
 *.gz
 *.jsonl
+*.png
