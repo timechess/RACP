@@ -10,36 +10,54 @@ from langchain.embeddings import HuggingFaceEmbeddings
 def load_json(file_path):
     return json.loads(Path(file_path).read_text())
 class Retriver():
-    def __init__(self,config=None,dataset=None) -> None:
+    """retriever 
+    
+    """
+    def __init__(self, config=None, database=None) -> None:
+        """Initialize retriever using config and database
+        
+        Args:
+            config (Config): configuration for the retriever.
+            database (list): a list of Document objects to build the retriever from.
+        """
         self.text_splitter = CharacterTextSplitter(chunk_size=config.chunk_size, chunk_overlap=config.chunk_overlap)
         self.build_embedding_model(config)
-        if dataset is None:
-            print("JSON")
-            self.build_retriver_from_json(config)
+        if database is not None:
+            self.build_retriver_from_database(database)
         else:
-            print("Dataset")
-            self.build_retriver_from_dataset(dataset)
-    def build_embedding_model(self,config):
-        # Initialize HuggingFaceEmbeddings
+            raise ValueError('Please specify database')
+        self.db = None
+        
+    def build_embedding_model(self, config):
+        """Initialize HuggingFaceEmbeddings
+        
+        Args:
+            config (Config): configuration for the retriever.
+        """
         model_kwargs = {'device': config.device}
         encode_kwargs = {'normalize_embeddings': config.normalize_embeddings}
         self.hf = HuggingFaceEmbeddings(model_name=config.model_name, model_kwargs=model_kwargs, encode_kwargs=encode_kwargs)
-    def build_retriver_from_json(self,config):
-        # Initialize JSONLoader
-        loader = JSONLoader(file_path=config.loader_file_path, jq_schema=config.loader_jq_schema, text_content=False)
-        data = loader.load()
-        print(f'Loaded {len(data)} documents using JSONLoader')
-        # Split documents using CharacterTextSplitter
-        documents = self.text_splitter.split_documents(data)
-        # Load documents into Chroma vector store
-        self.db = Chroma.from_documents(documents, self.hf)
-    def build_retriver_from_dataset(self,dataset):
+    def build_retriver_from_database(self, database):
+        """Build the retriever from the database
+        
+        Args:
+            database (list): a list of Document objects to build the retriever from.
+        """
         # TODO : remove k < 2000 
-        data = [i.to_Document() for k,i in enumerate(dataset) if k < 2000 ]
-        print(f'Loaded {len(data)} documents using dataset ')
+        data = [i.to_Document() for k,i in enumerate(database) if k < 2000 ]
+        print(f'Loaded {len(data)} documents using database ')
         documents = self.text_splitter.split_documents(data)
         self.db = Chroma.from_documents(documents,self.hf)
-    def retrival(self,query,k=10):
+    def retrival(self, query, k=10):
+        """Perform retrieval
+        
+        Args:
+            query (str): the query to search for in the retriever.
+            k (int): number of documents to return.
+            
+        Returns:
+            list: a list of dictionaries containing information about the retrieved documents.
+        """
         docs = self.db.similarity_search_with_relevance_scores(query,k=k)
         result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'quality':doc[0].metadata['quality'],'relevance':doc[1],} for doc in docs if doc[1]>0]
         return result 
