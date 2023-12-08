@@ -8,12 +8,12 @@ app.secret_key = secret_key  # 设置用于加密 session 数据的密钥
 
 import argparse
 import yaml
-from racp.naive_retriver import Retriver
+from racp.retriver import Retriver
 from racp.data import PaperItem ,RawSet
 from racp import utils 
 print("start loading database...")
 config = utils.load_config("./retriver_config.yaml")
-database = RawSet(config.dbpath,length = 100)
+database = RawSet(config.dbpath,length = -1)
 print("start loading retriver...")
 retriver = Retriver(config,database)
 print("initialization end ... ")
@@ -75,7 +75,7 @@ def index():
             result = retriver.retrival(processed_text)
             session['arxiv_result'] = result
         
-        print(session['processed_text'])
+        # print(session['arxiv_result'])
         # convert arxiv id to arxiv link 
         # 将结果存储在 session 中，以便在下一次请求时使用
         return render_template('index.html', input_text=input_text, processed_text=session['processed_text'], table_data=session['arxiv_result'])
@@ -86,4 +86,4 @@ def index():
     session.pop('arxiv_result', None)
     return render_template('index.html')
 if __name__ == '__main__':
-    app.run(port=6006,debug=True)
+    app.run(port=6006,debug=False)

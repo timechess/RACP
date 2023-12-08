@@ -26,7 +26,6 @@ class Retriver():
             self.build_retriver_from_database(database)
         else:
             raise ValueError('Please specify database')
-        self.db = None
         
     def build_embedding_model(self, config):
         """Initialize HuggingFaceEmbeddings
@@ -44,9 +43,13 @@ class Retriver():
             database (list): a list of Document objects to build the retriever from.
         """
         # TODO : remove k < 2000 
-        data = [i.to_Document() for k,i in enumerate(database) if k < 2000 ]
+        # data = [i.to_Document() for k,i in enumerate(database) if k < 2000 ]
+        data = [i.to_Document() for k,i in enumerate(database) ]
         print(f'Loaded {len(data)} documents using database ')
         documents = self.text_splitter.split_documents(data)
+        ## check duplicate 
+        ids = set([doc.metadata['source'] for doc in documents])
+        print(len(ids),len(documents))
         self.db = Chroma.from_documents(documents,self.hf)
     def retrival(self, query, k=10):
         """Perform retrieval
@@ -58,8 +61,20 @@ class Retriver():
         Returns:
             list: a list of dictionaries containing information about the retrieved documents.
         """
-        docs = self.db.similarity_search_with_relevance_scores(query,k=k)
-        result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'quality':doc[0].metadata['quality'],'relevance':doc[1],} for doc in docs if doc[1]>0]
-        return result 
+        docs = self.db.similarity_search_with_relevance_scores(query,k=k*2)
+        # 现在这个result 里面 arxiv id有重复，请你帮我去掉重复的
+        result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'quality':doc[0].metadata['quality'],'relevance':doc[1]} for doc in docs if doc[1]>0]
+        # 如果你希望按照原始列表中的顺序保留其他字段，可以使用以下代码：
+        arxivids = list(set([doc[0].metadata['source'] for doc in docs if doc[1] > 0]))
+
+        unique_result = []
+        for doc in docs:
+            if doc[1] > 0:
+                arxiv_id = doc[0].metadata['source']
+                if arxiv_id  in arxivids:
+                    unique_result.append({'Papername': doc[0].metadata['title'], 'arxiv_id': doc[0].metadata['source'], 'quality': doc[0].metadata['quality'], 'relevance': doc[1]})
+                    arxivids.remove(arxiv_id)
+        print(unique_result)
+        return unique_result 
         # return  f"Most similar document's page content:\n{docs[0].page_content}"
     # TODO: other retrival policy 

@@ -94,8 +94,12 @@ class PaperItem:
         """Convert to document format"""
         from langchain_core.documents.base import Document
         abstract = self.abstract
-        # TODO : content retrival 
         content = self.content
+        if abstract is None:
+            abstract = self.content[:250]
+        # TODO : content retrival 
+        if abstract is None:
+            abstract = ""
         metadata = {"source":self.arxiv_id,"title":self.title,"quality":self.quality}
         metadata = {"source":self.arxiv_id,"title":self.title,"quality":str(self.quality)}
         doc = Document(metadata=metadata,page_content=abstract)
@@ -123,31 +127,26 @@ class PaperItem:
             self.content = json_data.get("content", "")
         except:
             raise ValueError("Fail to load data, please check the items.")
-    
     @property
     def quality(self):
         """Evaluate confidence quality."""
         if self._quality is None:  # Calculate only if not computed yet
             # TODO: normalize citation 
             cite_num = len(self.citations)
-            pubdate = datetime.strptime(self.date, "%Y-%m-%d").date()
-            today = datetime.now().date()
-            days_diff = (today - pubdate).days
-            cite_diff =  cite_num/ days_diff
-            cite_score = cite_diff + np.log(cite_num+1) # the citation larger than dozens is enough for reality 
+            # pubdate = datetime.strptime(self.date, "%Y-%m-%d").date()
+            # today = datetime.now().date()
+            # days_diff = (today - pubdate).days
+            # cite_diff =  cite_num/ days_diff
+            cite_score =  np.log(cite_num+1) # the citation larger than dozens is enough for reality 
             # TODO: Author score considering the history of publication
-            if len(self.authors):
-                author_citation = sum([a['citationCount'] for a in  self.authors])
-                author_paper = sum([a['paperCount'] for a in  self.authors])
-                author_score = author_paper+author_citation
-                author_score = author_score/len(self.authors)
-                author_score = np.log(author_score+1)
-            else:
-                author_score = 0 
-            x = (days_diff / 225)
-            dates_core = np.e * x * np.exp(-x)
+            author_score = 0 
+            # x = (days_diff / 225)
+            # dates_core = np.e * x * np.exp(-x)
+            dates_core=0
             self._quality = dates_core+cite_score+ author_score 
+
         return self._quality
+            
             
         
         

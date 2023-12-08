@@ -147,11 +147,13 @@ def ccbc(paperA,paperB):
     # 2. shared citation ratio 
     cocite = paperA.citations.intersection(paperB.citations)
     alcite = paperA.citations.union(paperB.citations)
-    score += len(cocite) / len(alcite)
+    if alcite:
+        score += len(cocite) / len(alcite)
     # 3. shared reference ratio 
     coref = paperA.references.intersection(paperB.references)
     alref = paperA.references.union(paperB.references)
-    score += len(coref) / len(alref)
+    if alref:
+        score += len(coref) / len(alref)
     
     return score / 2.5
 
