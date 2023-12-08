@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relevance Augmented Connected Papers</title>
+    <style>
+        /* 设置Description输入框和文件上传按钮的宽度为100% */
+        #input_text, #file_input, #arxiv_id {
+            width: 100%;
+            box-sizing: border-box; /* 让宽度包括内边距和边框 */
+            margin-bottom: 10px; /* 添加底部边距 */
+        }
+
+        /* 调整Retrieval按钮的样式 */
+        .submit_button {
+            font-size: 20px;
+            background-color: #4CAF50; /* Green color */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Relevance Augmented Connected Papers</h1>
+    <form method="post" action="/" enctype="multipart/form-data">
+        <label for="input_text">Description</label>
+        <br>
+        <textarea name="input_text" id="input_text" rows="4" cols="50"></textarea>
+        <br>
+        <!-- 增加API Key输入框 -->
+        <label for="api_key">API Key</label>
+        <br>
+        <input type="text" name="api_key" id="api_key">
+        <br>
+        <!-- 将文件上传按钮和arXiv ID文本框并排 -->
+        <div style="display: flex; justify-content: space-between;">
+
+            <!-- 左侧：文件上传按钮 -->
+            <div style="flex-basis: 48%;">
+                <label for="file_input">Upload File</label>
+                <br>
+                <input type="file" name="file_input" id="file_input">
+            </div>
+
+            <!-- 右侧：arXiv ID文本框 -->
+            <div style="flex-basis: 48%;">
+                <label for="arxiv_id">arXiv ID</label>
+                <br>
+                <input type="text" name="arxiv_id" id="arxiv_id">
+            </div>
+        </div>
+
+        <!-- 调整Retrieval按钮的样式 -->
+        <input type="submit" value="Retrieval" class="submit_button">
+    </form>
+
+    {% if table_data %}
+        <!-- 显示表格 -->
+        <table>
+            <tr>
+                <th>Papername</th>
+                <th>arXiv ID</th>
+                <th>Quality</th>
+                <th>Relevance</th>
+            </tr>
+            {% for row in table_data %}
+                <tr>
+                    <td>{{ row.Papername }}</td>
+                    <td>{{ row.arxiv_id }}</td>
+                    <td>{{ row.quality }}</td>
+                    <td>{{ row.relevance }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+</body>
+</html>

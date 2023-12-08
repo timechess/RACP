@@ -15,6 +15,7 @@ def parser():
     parser.add_argument("--threads", type=int, default=4, help="Threads used to download pdfs")
     parser.add_argument("--check-download", default=False, action="store_true", help="Whether only check download")
     parser.add_argument("--save-path", default="./data", help="Directory to store data")
+    parser.add_argument("--api-key", default="", type=str, help="Semantics scholar api key")
 
     return parser.parse_args()
 
@@ -32,11 +33,11 @@ makedir(os.path.join(arg.save_path,"data"), logger)
 
 def download_worker(split, id):
     for arxiv_id in split[id]:
-        item = PaperItem(arxiv_id, logger=logger)
         try:
+            item = PaperItem(arxiv_id, logger=logger, key=arg.api_key)
             item.save_json(os.path.join(arg.save_path, "data"))
         except:
-            logger.error(f"{arxiv_id} fail")
+            continue
 
 
 if __name__ == "__main__":
@@ -50,7 +51,7 @@ if __name__ == "__main__":
             pdfids = crawl.get_ids(arg.year, arg.fields, arg.save_path, logger)
 
     if arg.check_download:
-        pdfids = crawl.check_download(pdfids, arg.save_path, logger)[:15000]
+        pdfids = crawl.check_download(pdfids, arg.save_path, logger)
     pdfnum = len(pdfids)//arg.threads
     pdfid_split = [pdfids[pdfnum*i:pdfnum*(i+1)] for i in range(arg.threads)]
     if len(pdfids)-pdfnum*arg.threads != 0:

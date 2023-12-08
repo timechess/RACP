@@ -12,7 +12,13 @@ setup(
         "nltk",
         "lxml",
         "arxiv",
-        "langchain"
+        "langchain",
+        "langchain_core",
+        "torch==2.1.1+cu118",
+        "powerlaw",
+        "jsonlines",
+        "sentence_transformers",
+        "chromadb"
     ],
     python_requires = ">=3.8",
     packages = ["racp"],

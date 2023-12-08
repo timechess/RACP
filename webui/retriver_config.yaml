@@ -1,0 +1,12 @@
+# config.yaml
+
+loader_file_path: '/root/autodl-tmp/test.json'
+loader_jq_schema: '.[].abstract'
+chunk_size: 1000
+chunk_overlap: 0
+model_name: 'sentence-transformers/all-mpnet-base-v2'
+device: 'cuda'
+normalize_embeddings: false
+
+dbpath : '/root/autodl-tmp/data'
+
