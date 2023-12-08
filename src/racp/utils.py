@@ -191,17 +191,37 @@ def weighted_ccbc(paperA, paperB, weight=dict()):
     return score  
 
 def arxivid2link(arxivid):
+    """convert arxiv id to arxiv link 
+
+    Args:
+        arxivid (str): arxiv id 
+
+    Returns:
+        link (str)
+    """
     return f'<a href="https://arxiv.org/abs/{arxivid}">{arxivid}</a>'
     # return f"https://arxiv.org/abs/{arxivid}"
 class ConfigObject:
     def __init__(self, config_dict):
         self.__dict__.update(config_dict)
 
-def load_config(config_path):
+def load_config(config_path: str) -> ConfigObject:
+    """Load configuration from a YAML file.
+    
+    Args:
+        config_path (str): path to the YAML configuration file.
+        
+    Returns:
+        ConfigObject: a ConfigObject instance containing the configuration data.
+        
+    Raises:
+        FileNotFoundError: if the configuration file is not found.
+        yaml.YAMLError: if the configuration file is not valid YAML.
+    """
     with open(config_path, 'r') as config_file:
         config_data = yaml.safe_load(config_file)
 
     if config_data is not None:
         return ConfigObject(config_data)
     else:
-        return None
+        raise ValueError("Failed to load configuration data")
