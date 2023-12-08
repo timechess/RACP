@@ -91,6 +91,7 @@ class PaperItem:
         }
         
     def to_Document(self):
+        """Convert to document format"""
         from langchain_core.documents.base import Document
         abstract = self.abstract
         # TODO : content retrival 
@@ -252,7 +253,7 @@ class RawSet(Dataset):
         '''Return a dictionary of papers' citaiton counts.'''
         return dict([(item.arxiv_id, len(item.citations)) for item in self.items])
     def topk(self, paper, k=100):
-        """返回列表中的前k个相关论文"""
+        """Return top k relevance paper"""
         sim = np.zeros(self.__len__())
         for i in range(self.__len__()):
             paper_i = self.__getitem__(i)
@@ -264,5 +265,6 @@ class RawSet(Dataset):
         topk_items = [self.__getitem__(i) for i in topk_indices]
         return topk_items
     def load_from_papers(self,papers):
+        """Build dataset from papers list """
         for paperitem in papers:
             self.items.append(paperitem)
