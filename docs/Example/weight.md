@@ -11,3 +11,5 @@ weight = 1 - cdf.get(len(paper.citations), 0)
 ```
 
 If you want to construct a retriever, you need the weight of all the paper involved in the dataset. Luckily, you only need to fit the cdf once. In our experiment, we use over 5 million papers to fit this function.
+
+For details, please read the [report](../../RACP.pdf).
