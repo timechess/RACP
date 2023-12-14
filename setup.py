@@ -13,12 +13,12 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'racp'
-DESCRIPTION = 'My short description for my project.'
+DESCRIPTION = 'A tool for building academic paper retriever.'
 URL = 'https://github.com/timechess/RACP'
 EMAIL = 'tyc221@ruc.edu.cn'
-AUTHOR = ['timechess', 'CIntellifusion']
+AUTHOR = 'timechess'
 REQUIRES_PYTHON = '>=3.8.0'
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
@@ -32,7 +32,6 @@ REQUIRED = [
     "arxiv",
     "langchain",
     "langchain_core",
-    "torch==2.1.1+cu118",
     "powerlaw",
     "jsonlines",
     "sentence_transformers",
@@ -41,7 +40,7 @@ REQUIRED = [
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    'fancy feature': ["torch==2.1.1+cu118"],
 }
 
 # The rest you shouldn't have to touch too much :)
