@@ -62,9 +62,7 @@ class Retriver():
             list: a list of dictionaries containing information about the retrieved documents.
         """
         docs = self.db.similarity_search_with_relevance_scores(query,k=k*2)
-        # 现在这个result 里面 arxiv id有重复，请你帮我去掉重复的
         result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'quality':doc[0].metadata['quality'],'relevance':doc[1]} for doc in docs if doc[1]>0]
-        # 如果你希望按照原始列表中的顺序保留其他字段，可以使用以下代码：
         arxivids = list(set([doc[0].metadata['source'] for doc in docs if doc[1] > 0]))
 
         unique_result = []

@@ -8,6 +8,7 @@ nav:
     - Reference/crawl.md
     - Reference/utils.md
     - Reference/data.md
+    - Reference/retriver.md
 
 theme: readthedocs
 
