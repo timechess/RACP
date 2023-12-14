@@ -50,7 +50,7 @@ After collecting all the items in the `data` directory, you can use `racp.data.R
 from racp.data import RawSet
 
 dataset = RawSet("./data")
-dataset.save("dataset.json")
+dataset.save("dataset.jsonl")
 ```
 
-It will save all the items in a json file. You can load it by using the `load` method of `RawSet`. Note that all the items in `RawSet` are `PaperItem`, not `dict`.
+It will save all the items in a jsonl file. You can load it by using the `load` method of `RawSet`. Note that all the items in `RawSet` are `PaperItem`, not `dict`.

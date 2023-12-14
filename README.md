@@ -4,7 +4,7 @@
 
 To start using this project, first you should run the setup script. You can either run
 ```shell
-pip install -e .
+pip install racp
 ```
 
 or

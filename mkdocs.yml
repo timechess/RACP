@@ -4,6 +4,7 @@ nav:
   - Home: index.md
   - Example:
     - Example/crawl.md
+    - Example/weight.md
   - Reference: 
     - Reference/crawl.md
     - Reference/utils.md
