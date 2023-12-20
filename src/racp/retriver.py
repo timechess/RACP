@@ -1,12 +1,12 @@
 import json
 from pathlib import Path
-import argparse
-from pprint import pprint
-from langchain.document_loaders import JSONLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.embeddings import HuggingFaceEmbeddings
-
+from langchain.storage import LocalFileStore
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.vectorstores import FAISS
+from langchain.embeddings import CacheBackedEmbeddings
 def load_json(file_path):
     return json.loads(Path(file_path).read_text())
 class Retriver():
@@ -50,7 +50,17 @@ class Retriver():
         ## check duplicate 
         ids = set([doc.metadata['source'] for doc in documents])
         print(len(ids),len(documents))
-        self.db = Chroma.from_documents(documents,self.hf)
+        # self.db = Chroma.from_documents(documents,self.hf)
+        from time import time 
+        t0 = time()
+        store = LocalFileStore("./cache/")
+
+        cached_embedder = CacheBackedEmbeddings.from_bytes_store(
+            self.hf, store, namespace="test"
+        )
+        self.db = FAISS.from_documents(documents, cached_embedder)
+        t1 = time()
+        print("loading time ",t1-t0)
     def retrival(self, query, k=10):
         """Perform retrieval
         
@@ -62,7 +72,9 @@ class Retriver():
             list: a list of dictionaries containing information about the retrieved documents.
         """
         docs = self.db.similarity_search_with_relevance_scores(query,k=k*2)
+        # 现在这个result 里面 arxiv id有重复，请你帮我去掉重复的
         result = [{'Papername':doc[0].metadata['title'],'arxiv_id':doc[0].metadata['source'],'quality':doc[0].metadata['quality'],'relevance':doc[1]} for doc in docs if doc[1]>0]
+        # 如果你希望按照原始列表中的顺序保留其他字段，可以使用以下代码：
         arxivids = list(set([doc[0].metadata['source'] for doc in docs if doc[1] > 0]))
 
         unique_result = []
