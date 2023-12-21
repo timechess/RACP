@@ -24,7 +24,7 @@ def process_text_and_file(input_text, uploaded_file):
         return f"Processed Text: {input_text}"
     elif uploaded_file:
         # TODO:  解析pdf 文件 抓取里面的文本 
-        file_content = uploaded_file.read().decode('utf-8')
+        file_content = utils.parse_pdf(stream=uploaded_file)
         return f"File Content: {file_content}"
     else:
         return ""
