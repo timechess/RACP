@@ -5,19 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Relevance Augmented Connected Papers</title>
     <style>
+        body {
+            background-color: #4a4a4a; /* 设置背景色为深灰色 */
+            color: rgb(255, 255, 255); /* 设置文字颜色为白色 */
+            font-family: Arial, sans-serif; /* 设置字体 */
+            margin: 0; /* 去除页面默认的边距 */
+        }
         /* 设置Description输入框和文件上传按钮的宽度为100% */
         #input_text, #file_input, #arxiv_id {
             width: 100%;
             box-sizing: border-box; /* 让宽度包括内边距和边框 */
             margin-bottom: 10px; /* 添加底部边距 */
+            background-color: #6b6b6b;
         }
-
+        h1 {
+            text-align: center;
+        }
         /* 调整Retrieval按钮的样式 */
         .submit_button {
             font-size: 20px;
-            background-color: #4CAF50; /* Green color */
+            background-color: #7423bc; /* Green color */
             border: none;
-            color: white;
+            color: rgb(255, 255, 255);
             padding: 15px 32px;
             text-align: center;
             text-decoration: none;
@@ -26,77 +35,133 @@
             cursor: pointer;
             border-radius: 8px;
         }
+        /* 设置arXiv ID标签的背景颜色 */
+        label[for="arxiv_id"] {
+            background-color: #888; /* 设置背景颜色为灰色 */
+            padding: 8px; /* 设置内边距 */
+            border-radius: 4px; /* 设置边框圆角 */
+        }  
+        label[for="input_text"] {
+            background-color: #555050; /* 设置背景颜色为灰色 */
+            padding: 8px; /* 设置内边距 */
+            border-radius: 4px; /* 设置边框圆角 */
+        }  
 
+        /* 设置arXiv ID输入框的背景颜色为灰色 */
+        #api_key {
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            background-color: #888; /* 设置背景颜色为灰色 */
+            color: white; /* 设置文字颜色为白色 */
+            border: 1px solid #777; /* 设置边框颜色 */
+            padding: 8px; /* 设置内边距 */
+            border-radius: 4px; /* 设置边框圆角 */
+        }
+        label[for="api_key"] {
+            background-color: #6641e0; /* 设置背景颜色为灰色 */
+            padding: 8px; /* 设置内边距 */
+            border-radius: 4px; /* 设置边框圆角 */
+        }
+        #text{
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            background-color: #888; /* 设置背景颜色为灰色 */
+            color: white; /* 设置文字颜色为白色 */
+            border: 1px solid #777; /* 设置边框颜色 */
+            padding: 8px; /* 设置内边距 */
+            border-radius: 4px; /* 设置边框圆角 */
+        }
+
+        /* 设置<textarea>的背景颜色为灰色 */
+        #input_text {
+            background-color: #888;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            color: #ffffff;
         }
 
         th, td {
-            border: 1px solid #ddd;
+            border: 1px solid #cfb2b2;
             padding: 8px;
             text-align: left;
         }
 
         th {
-            background-color: #4CAF50;
-            color: white;
+            background-color: #9270e2;
+            color: rgb(255, 255, 255);
         }
     </style>
 </head>
 <body>
     <h1>Relevance Augmented Connected Papers</h1>
     <form method="post" action="/" enctype="multipart/form-data">
+
+        <!-- arXiv ID放在第一排，占据整行 -->
+        <label for="arxiv_id">arXiv ID</label>
+        <br>
+        <input type="text" name="arxiv_id" id="arxiv_id" style="width: 100%;">
+    
+        <br>
+    
+        <!-- 调整Description输入框的样式，缩小一点 -->
         <label for="input_text">Description</label>
         <br>
-        <textarea name="input_text" id="input_text" rows="4" cols="50"></textarea>
+        <textarea name="input_text" id="input_text" rows="3" cols="50"></textarea>
+    
         <br>
+    
         <!-- 增加API Key输入框 -->
         <label for="api_key">API Key</label>
         <br>
         <input type="text" name="api_key" id="api_key">
+    
         <br>
+    
         <!-- 将文件上传按钮和arXiv ID文本框并排 -->
         <div style="display: flex; justify-content: space-between;">
-
-            <!-- 左侧：文件上传按钮 -->
-            <div style="flex-basis: 48%;">
+    
+            <!-- 左侧：文件上传按钮（注释掉） -->
+            <!-- <div style="flex-basis: 48%;">
                 <label for="file_input">Upload File</label>
                 <br>
                 <input type="file" name="file_input" id="file_input">
-            </div>
-
-            <!-- 右侧：arXiv ID文本框 -->
-            <div style="flex-basis: 48%;">
-                <label for="arxiv_id">arXiv ID</label>
+            </div> -->
+    
+            <!-- 右侧：arXiv ID文本框占据剩余空间 -->
+            <div style="flex-basis: 100%;">
+                <label for="file_input">Upload File</label>
                 <br>
-                <input type="text" name="arxiv_id" id="arxiv_id">
+                <input type="file" name="file_input" id="file_input" style="width: 100%;">
             </div>
+    
         </div>
-
+    
         <!-- 调整Retrieval按钮的样式 -->
         <input type="submit" value="Retrieval" class="submit_button">
+    
     </form>
-
+    
     {% if table_data %}
-        <!-- 显示表格 -->
-        <table>
+    <!-- 显示表格 -->
+    <table>
+        <tr>
+            <th>Papername</th>
+            <th>arXiv ID</th>
+            <th>Relevance</th>
+        </tr>
+        {% for row in table_data %}
             <tr>
-                <th>Papername</th>
-                <th>arXiv ID</th>
-                <th>Quality</th>
-                <th>Relevance</th>
+                <td><a href="https://arxiv.org/abs/{{ row.arxiv_id }}" target="_blank" style="color: #ffffff; text-decoration: none;">{{ row.Papername }}</a></td>
+                <td>{{ row.arxiv_id }}</td>
+                <td>{{ row.relevance }}</td>
             </tr>
-            {% for row in table_data %}
-                <tr>
-                    <td>{{ row.Papername }}</td>
-                    <td>{{ row.arxiv_id }}</td>
-                    <td>{{ row.quality }}</td>
-                    <td>{{ row.relevance }}</td>
-                </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
+        {% endfor %}
+    </table>
+{% endif %}
 </body>
 </html>
