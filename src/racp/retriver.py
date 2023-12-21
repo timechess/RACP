@@ -82,8 +82,9 @@ class Retriver():
             if doc[1] > 0:
                 arxiv_id = doc[0].metadata['source']
                 if arxiv_id  in arxivids:
-                    unique_result.append({'Papername': doc[0].metadata['title'], 'arxiv_id': doc[0].metadata['source'], 'quality': doc[0].metadata['quality'], 'relevance': doc[1]})
-                    arxivids.remove(arxiv_id)
+                    # unique_result.append({'Papername': doc[0].metadata['title'], 'arxiv_id': doc[0].metadata['source'], 'quality': doc[0].metadata['quality'], 'relevance': doc[1]})
+                    unique_result.append({'Papername': doc[0].metadata['title'], 'arxiv_id':doc[0].metadata['source'], 'relevance': doc[1]})
+                    arxivids.remove(arxiv_id) 
         print(unique_result)
         return unique_result 
         # return  f"Most similar document's page content:\n{docs[0].page_content}"

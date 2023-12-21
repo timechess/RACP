@@ -156,13 +156,14 @@ class RawSet(Dataset):
     def __init__(self, save_path=None,length = -1 ) -> None:
         super().__init__()
         self.items = []  # List of PaperItems
+        self.id2idx = {}
         if save_path != None:
             self._load_from_directory(save_path,length)
 
     def _load_from_directory(self, save_path,length = -1 ):
         '''Load json files from given directory.'''
         filenames = os.listdir(save_path)
-        for file in tqdm(filenames):
+        for idx, file in tqdm(enumerate(filenames), total=len(filenames)):
             path = os.path.join(save_path, file)
             try:
                 with open(path, "r", encoding="utf-8") as f:
@@ -172,6 +173,7 @@ class RawSet(Dataset):
                 continue
             item = PaperItem()
             item.load_json(data)
+            self.id2idx[item.arxiv_id] = idx
             self.items.append(item)
             # TODO : remove for deveplop 
             if length>0 and len(self.items)>length:
@@ -179,10 +181,15 @@ class RawSet(Dataset):
     
     def add_item(self, item : PaperItem):
         self.items.append(item)
-        
+    
+    def get_item_by_arxivid(self,arxiv_id):
+        if self.id2idx.get(arxiv_id,-1) !=-1:
+            return self.items[self.id2idx[arxiv_id]]
+        else:
+            return -1 
     def __getitem__(self, index) -> PaperItem:
         return self.items[index]
-    
+
     def __len__(self):
         return len(self.items)
     
@@ -259,6 +266,9 @@ class RawSet(Dataset):
             sim[i] = ccbc(paper, paper_i)
         
         # 使用np.argsort获取排序后的索引数组
+        print(sim)
+        print(np.argsort(sim))
+        print(k,type(k))
         topk_indices = np.argsort(sim)[::-1][:k]
         # 获取对应的top k项
         topk_items = [self.__getitem__(i) for i in topk_indices]
